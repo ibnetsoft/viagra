@@ -1,0 +1,476 @@
+{
+  "runId": "2026-09-10T11-00-03-544Z",
+  "database": "별도 보관 DB (실제 운영 데이터와 분리)",
+  "failure": "",
+  "checks": [
+    {
+      "name": "충전 요청 재시도: PV 한 번만 증가",
+      "actual": 300000,
+      "expected": 300000,
+      "passed": true
+    },
+    {
+      "name": "충전은 한도를 추가하지 않음",
+      "actual": 0,
+      "expected": 0,
+      "passed": true
+    },
+    {
+      "name": "충전은 주문·보너스를 생성하지 않음",
+      "actual": {
+        "orders": 0,
+        "bonuses": 0
+      },
+      "expected": {
+        "orders": 0,
+        "bonuses": 0
+      },
+      "passed": true
+    },
+    {
+      "name": "후원 조직 깊이: 루트 아래 18대",
+      "actual": 18,
+      "expected": 18,
+      "passed": true
+    },
+    {
+      "name": "최상위 삼각 1·2·3 완성",
+      "actual": [
+        {
+          "kind": "triangle1",
+          "count": 1,
+          "gross": 90000
+        },
+        {
+          "kind": "triangle2",
+          "count": 2,
+          "gross": 180000
+        },
+        {
+          "kind": "triangle3",
+          "count": 4,
+          "gross": 240000
+        }
+      ],
+      "expected": [
+        {
+          "kind": "triangle1",
+          "count": 1,
+          "gross": 90000
+        },
+        {
+          "kind": "triangle2",
+          "count": 2,
+          "gross": 180000
+        },
+        {
+          "kind": "triangle3",
+          "count": 4,
+          "gross": 240000
+        }
+      ],
+      "passed": true
+    },
+    {
+      "name": "추가 충전도 주문·보너스 생성 없음",
+      "actual": {
+        "orders": 36,
+        "bonuses": 111
+      },
+      "expected": {
+        "orders": 36,
+        "bonuses": 111
+      },
+      "passed": true
+    },
+    {
+      "name": "재구매 후 PV 잔액",
+      "actual": 100000,
+      "expected": 100000,
+      "passed": true
+    },
+    {
+      "name": "재구매 한도는 한 번만 추가",
+      "actual": 3000000,
+      "expected": 3000000,
+      "passed": true
+    },
+    {
+      "name": "롤업은 정확히 13명",
+      "actual": 13,
+      "expected": 13,
+      "passed": true
+    },
+    {
+      "name": "롤업 13대 각각 10,000원",
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "name": "14~18대 롤업 없음",
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "name": "재구매 시 삼각 중복 지급 없음",
+      "actual": 7,
+      "expected": 7,
+      "passed": true
+    },
+    {
+      "name": "팀장 배분 참여자 4명 (팀장3 + 본부장1)",
+      "actual": 4,
+      "expected": 4,
+      "passed": true
+    },
+    {
+      "name": "본부장 팀장 배분 수령",
+      "actual": 15000,
+      "expected": 15000,
+      "passed": true
+    },
+    {
+      "name": "본부장 전용 배분 별도 수령",
+      "actual": 30000,
+      "expected": 30000,
+      "passed": true
+    },
+    {
+      "name": "일일 마감 재실행 중복 없음",
+      "actual": 5,
+      "expected": 5,
+      "passed": true
+    },
+    {
+      "name": "잔여 2만원 / 발생 9만원 → 지급2만·소멸7만",
+      "actual": {
+        "gross": 90000,
+        "paid": 20000,
+        "expired": 70000
+      },
+      "expected": {
+        "gross": 90000,
+        "paid": 20000,
+        "expired": 70000
+      },
+      "passed": true
+    },
+    {
+      "name": "한도 정지 중 발생분 전액 소멸",
+      "actual": {
+        "paid": 0,
+        "expired": 90000
+      },
+      "expected": {
+        "paid": 0,
+        "expired": 90000
+      },
+      "passed": true
+    },
+    {
+      "name": "충전만으로 한도 부활 없음",
+      "actual": 1500000,
+      "expected": 1500000,
+      "passed": true
+    },
+    {
+      "name": "재구매 뒤 새 추천 보너스만 지급",
+      "actual": 90000,
+      "expected": 90000,
+      "passed": true
+    },
+    {
+      "name": "과거 소멸 보너스 부활 없음",
+      "actual": 0,
+      "expected": 0,
+      "passed": true
+    },
+    {
+      "name": "계정 정지 보너스 지급 없음",
+      "actual": 0,
+      "expected": 0,
+      "passed": true
+    },
+    {
+      "name": "일반 회원 충전 권한 차단",
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "name": "RLS: 본인 충전 기록만 조회",
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "name": "모든 직급 등장",
+      "actual": [
+        "본부장",
+        "센터",
+        "에이전트",
+        "팀장"
+      ],
+      "expected": [
+        "본부장",
+        "센터",
+        "에이전트",
+        "팀장"
+      ],
+      "passed": true
+    },
+    {
+      "name": "모든 보너스 종류 발생",
+      "actual": [
+        "center",
+        "head",
+        "referral",
+        "rollup",
+        "team",
+        "triangle1",
+        "triangle2",
+        "triangle3"
+      ],
+      "expected": [
+        "center",
+        "head",
+        "referral",
+        "rollup",
+        "team",
+        "triangle1",
+        "triangle2",
+        "triangle3"
+      ],
+      "passed": true
+    },
+    {
+      "name": "보너스 원장 합계와 회원 지급액 일치",
+      "actual": 0,
+      "expected": 0,
+      "passed": true
+    },
+    {
+      "name": "PV 잔액 = 충전 − 상품 구매",
+      "actual": 0,
+      "expected": 0,
+      "passed": true
+    },
+    {
+      "name": "한도 = 상품 구매 건수 × 150만원",
+      "actual": 0,
+      "expected": 0,
+      "passed": true
+    }
+  ],
+  "grades": [
+    {
+      "member_code": "TEST000",
+      "grade": "본부장"
+    },
+    {
+      "member_code": "TEST001",
+      "grade": "팀장"
+    },
+    {
+      "member_code": "TEST002",
+      "grade": "팀장"
+    },
+    {
+      "member_code": "TEST003",
+      "grade": "팀장"
+    },
+    {
+      "member_code": "TEST030",
+      "grade": "센터"
+    },
+    {
+      "member_code": "TEST029",
+      "grade": "에이전트"
+    }
+  ],
+  "ancestors": [
+    {
+      "generation": 1,
+      "member_code": "TEST028",
+      "gross": 10000,
+      "paid": 10000
+    },
+    {
+      "generation": 2,
+      "member_code": "TEST027",
+      "gross": 10000,
+      "paid": 10000
+    },
+    {
+      "generation": 3,
+      "member_code": "TEST026",
+      "gross": 10000,
+      "paid": 10000
+    },
+    {
+      "generation": 4,
+      "member_code": "TEST025",
+      "gross": 10000,
+      "paid": 10000
+    },
+    {
+      "generation": 5,
+      "member_code": "TEST024",
+      "gross": 10000,
+      "paid": 10000
+    },
+    {
+      "generation": 6,
+      "member_code": "TEST023",
+      "gross": 10000,
+      "paid": 10000
+    },
+    {
+      "generation": 7,
+      "member_code": "TEST022",
+      "gross": 10000,
+      "paid": 10000
+    },
+    {
+      "generation": 8,
+      "member_code": "TEST021",
+      "gross": 10000,
+      "paid": 10000
+    },
+    {
+      "generation": 9,
+      "member_code": "TEST020",
+      "gross": 10000,
+      "paid": 10000
+    },
+    {
+      "generation": 10,
+      "member_code": "TEST019",
+      "gross": 10000,
+      "paid": 10000
+    },
+    {
+      "generation": 11,
+      "member_code": "TEST018",
+      "gross": 10000,
+      "paid": 10000
+    },
+    {
+      "generation": 12,
+      "member_code": "TEST017",
+      "gross": 10000,
+      "paid": 10000
+    },
+    {
+      "generation": 13,
+      "member_code": "TEST016",
+      "gross": 10000,
+      "paid": 10000
+    },
+    {
+      "generation": 14,
+      "member_code": "TEST015",
+      "gross": 0,
+      "paid": 0
+    },
+    {
+      "generation": 15,
+      "member_code": "TEST007",
+      "gross": 0,
+      "paid": 0
+    },
+    {
+      "generation": 16,
+      "member_code": "TEST003",
+      "gross": 0,
+      "paid": 0
+    },
+    {
+      "generation": 17,
+      "member_code": "TEST001",
+      "gross": 0,
+      "paid": 0
+    },
+    {
+      "generation": 18,
+      "member_code": "TEST000",
+      "gross": 0,
+      "paid": 0
+    }
+  ],
+  "totals": [
+    {
+      "kind": "center",
+      "count": 38,
+      "gross": 570000,
+      "paid": 570000,
+      "expired": 0
+    },
+    {
+      "kind": "head",
+      "count": 1,
+      "gross": 30000,
+      "paid": 30000,
+      "expired": 0
+    },
+    {
+      "kind": "referral",
+      "count": 61,
+      "gross": 3930000,
+      "paid": 3680000,
+      "expired": 250000
+    },
+    {
+      "kind": "rollup",
+      "count": 13,
+      "gross": 130000,
+      "paid": 130000,
+      "expired": 0
+    },
+    {
+      "kind": "team",
+      "count": 4,
+      "gross": 60000,
+      "paid": 60000,
+      "expired": 0
+    },
+    {
+      "kind": "test_fixture",
+      "count": 1,
+      "gross": 1210000,
+      "paid": 1210000,
+      "expired": 0
+    },
+    {
+      "kind": "triangle1",
+      "count": 8,
+      "gross": 720000,
+      "paid": 720000,
+      "expired": 0
+    },
+    {
+      "kind": "triangle2",
+      "count": 6,
+      "gross": 540000,
+      "paid": 540000,
+      "expired": 0
+    },
+    {
+      "kind": "triangle3",
+      "count": 4,
+      "gross": 240000,
+      "paid": 240000,
+      "expired": 0
+    }
+  ],
+  "counts": {
+    "members": 40,
+    "pv_topups": 45,
+    "purchases": 42,
+    "bonuses": 136,
+    "centers": 1,
+    "audits": 91
+  }
+}

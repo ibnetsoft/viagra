@@ -37,11 +37,22 @@ export function seedDemo(): AppData {
   }));
   const data: AppData = {
     members,
+    topups: members.map((m, i) => ({
+      id: `topup-${i}`,
+      member_id: m.id,
+      kind: "initial",
+      cash: 370000,
+      pv: 300000,
+      note: "샘플 PV 충전",
+      created_at: m.created_at,
+    })),
     purchases: members.map((m, i) => ({
       id: `purchase-${i}`,
       member_id: m.id,
       kind: "initial",
-      cash: 370000,
+      payment_method: "pv",
+      pv_spent: 300000,
+      cash: 0,
       pv: 300000,
       cap_added: 1500000,
       shipping_status: i < 3 ? "delivered" : "pending",
@@ -100,10 +111,39 @@ export function demoCredit(
   product?: Product,
 ): AppData {
   const data = structuredClone(original);
-  if (data.purchases.some((p) => p.id === requestId)) return data;
+  if (
+    data.purchases.some((p) => p.id === requestId) ||
+    data.topups?.some((p) => p.id === requestId)
+  )
+    return data;
   const member = data.members.find((m) => m.id === id);
   if (!member || member.status !== "active")
     throw new Error("충전할 수 없는 회원입니다.");
+  if (!product) {
+    data.topups ??= [];
+    const kind = data.topups.some((p) => p.member_id === id)
+      ? "repeat"
+      : "initial";
+    const t = terms[kind];
+    member.pv += t.pv;
+    data.topups.unshift({
+      id: requestId,
+      member_id: id,
+      kind,
+      cash: t.cash,
+      pv: t.pv,
+      note,
+      created_at: new Date().toISOString(),
+    });
+    data.audits.unshift({
+      id: crypto.randomUUID(),
+      action: "PV 충전",
+      actor: "데모 관리자",
+      detail: member.name + " · " + t.pv + " PV",
+      created_at: new Date().toISOString(),
+    });
+    return data;
+  }
   const kind = data.purchases.some((p) => p.member_id === id)
     ? "repeat"
     : "initial";

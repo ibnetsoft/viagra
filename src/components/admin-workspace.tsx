@@ -49,7 +49,7 @@ const tabs = [
   { id: "overview", label: "대시보드", icon: LayoutDashboard },
   { id: "sales", label: "매출 관리", icon: CreditCard },
   { id: "members", label: "회원 관리", icon: Users },
-  { id: "credit", label: "구매 · PV 충전", icon: Wallet },
+  { id: "credit", label: "PV 충전", icon: Wallet },
   { id: "shipping", label: "배송 관리", icon: Truck },
   { id: "organization", label: "조직도", icon: GitBranch },
   { id: "bonuses", label: "보너스 내역", icon: CreditCard },
@@ -65,10 +65,7 @@ const titles: Record<Tab, [string, string]> = {
     "오늘의 회원 활동과 처리할 업무를 확인하세요.",
   ],
   members: ["회원 관리", "회원 정보와 추천·후원 관계를 관리하세요."],
-  credit: [
-    "구매 · PV 충전",
-    "입금을 확인하고 구매와 PV 충전을 함께 처리하세요.",
-  ],
+  credit: ["PV 충전", "입금을 확인하고 회원의 보유 PV를 충전하세요."],
   shipping: ["배송 관리", "구매 당시의 배송지와 상품 발송 상태를 확인하세요."],
   organization: [
     "파트너 조직도",
@@ -186,7 +183,7 @@ export default function AdminWorkspace({
   );
   const pending = data.purchases.filter((p) => p.shipping_status === "pending");
   const purchased = data.members.filter((m) => m.bonus_limit > 0).length;
-  const sales = data.purchases.reduce((a, p) => a + p.cash, 0),
+  const sales = (data.topups ?? []).reduce((a, p) => a + p.cash, 0),
     paid = data.bonuses.reduce((a, b) => a + b.paid, 0);
   const editRelationsLocked = Boolean(
     edit &&
@@ -200,7 +197,7 @@ export default function AdminWorkspace({
   const serviceOrders = data.purchases
     .filter((p) => p.member_id === serviceMemberId)
     .sort((a, b) => b.created_at.localeCompare(a.created_at));
-  const creditKind = data.purchases.some((p) => p.member_id === creditId)
+  const creditKind = (data.topups ?? []).some((p) => p.member_id === creditId)
     ? "repeat"
     : "initial";
   const creditTerms = terms[creditKind];
@@ -346,7 +343,7 @@ export default function AdminWorkspace({
                   foot={`구매 회원 ${purchased}명 · 가입 대기 ${data.members.length - purchased}명`}
                 />
                 <Stat
-                  label={"누적 현금 매출"}
+                  label={"누적 충전 입금액"}
                   value={money(sales)}
                   unit="원"
                   icon={<Wallet size={20} />}
@@ -414,7 +411,7 @@ export default function AdminWorkspace({
                   <div className="cap-note">
                     <ShieldCheck size={18} />
                     <span>
-                      입금 확인 후 생성된 주문을 관리하세요.
+                      회원이 PV로 구매한 주문을 관리하세요.
                       <br />
                       <small>회원별 한도는 회원 관리에서 확인합니다.</small>
                     </span>
@@ -429,7 +426,7 @@ export default function AdminWorkspace({
                         처리할 배송{" "}
                         <span className="count">{pending.length}</span>
                       </h2>
-                      <p>입금 확인이 완료된 주문입니다.</p>
+                      <p>PV 결제가 완료된 주문입니다.</p>
                     </div>
                     <button
                       className="text-button"
@@ -508,7 +505,12 @@ export default function AdminWorkspace({
               </div>
             </>
           )}
-          {tab === "sales" && <SalesReport purchases={data.purchases} />}
+          {tab === "sales" && (
+            <SalesReport
+              purchases={data.purchases}
+              topups={data.topups ?? []}
+            />
+          )}
           {tab === "members" && (
             <section className="panel">
               {serviceMember && (
@@ -566,8 +568,8 @@ export default function AdminWorkspace({
                     </button>
                   </div>
                   <p className="member-service-help">
-                    입금을 확인하고 충전하면 미배송 주문이 자동으로 생성됩니다.
-                    아래에서 주문별 배송 상태를 처리하세요.
+                    충전은 PV 잔액만 늘어납니다. 회원이 상품을 구매하면 배송
+                    주문이 생성됩니다. 아래에서 주문별 배송 상태를 처리하세요.
                     {serviceMember.status !== "active" &&
                       " 이용 정지 회원은 충전할 수 없습니다."}
                   </p>
@@ -630,7 +632,7 @@ export default function AdminWorkspace({
                     </table>
                   </div>
                   {!serviceOrders.length && (
-                    <Empty text="아직 구매 내역이 없습니다. 입금 확인 후 첫 충전을 진행하세요." />
+                    <Empty text="아직 상품 구매 내역이 없습니다. 충전 후 회원 앱에서 상품을 구매하세요." />
                   )}
                 </section>
               )}
@@ -638,7 +640,7 @@ export default function AdminWorkspace({
                 <div className="segmented">
                   {[
                     ["all", "전체 회원"],
-                    ["pending", "첫 충전 대기"],
+                    ["pending", "첫 구매 대기"],
                     ["suspended", "정지 회원"],
                   ].map(([v, l]) => (
                     <button
@@ -729,20 +731,18 @@ export default function AdminWorkspace({
                     </span>
                     <div>
                       <span className="eyebrow">
-                        {k === "initial" ? "FIRST PURCHASE" : "REPEAT PURCHASE"}
+                        {k === "initial" ? "FIRST TOPUP" : "REPEAT TOPUP"}
                       </span>
                       <h2>
-                        {k === "initial" ? "첫 파트너 구매" : "파트너 재구매"}
+                        {k === "initial" ? "최초 PV 충전" : "추가 PV 충전"}
                       </h2>
-                      <p>활력단 15개 · {money(terms[k].pv)} PV 충전</p>
+                      <p>{money(terms[k].pv)} PV 충전</p>
                     </div>
                     <strong>
                       {money(terms[k].cash)}
                       <small>원</small>
                     </strong>
-                    <span className="badge green">
-                      한도 +{money(terms[k].cap)}원
-                    </span>
+                    <span className="badge green">상품 구매 시 한도 추가</span>
                   </section>
                 ))}
               </div>
@@ -751,8 +751,8 @@ export default function AdminWorkspace({
                   <div>
                     <h2>입금 확인 후 수동 충전</h2>
                     <p>
-                      상품 구매 승인, PV 충전, 한도 추가, 미배송 주문이 함께
-                      생성됩니다.
+                      입금액에 해당하는 PV만 충전합니다. 상품 주문은 회원 앱에서
+                      진행합니다.
                     </p>
                   </div>
                   <select
@@ -776,16 +776,16 @@ export default function AdminWorkspace({
               <section className="panel">
                 <div className="panel-heading">
                   <div>
-                    <h2>구매 · 충전 기록</h2>
-                    <p>승인된 구매는 정산 근거로 보관됩니다.</p>
+                    <h2>PV 충전 기록</h2>
+                    <p>입금 확인과 PV 충전 기록을 보관합니다.</p>
                   </div>
                 </div>
-                <PurchaseTable
-                  rows={data.purchases.slice((page - 1) * 10, page * 10)}
+                <TopupTable
+                  rows={(data.topups ?? []).slice((page - 1) * 10, page * 10)}
                   members={data.members}
                 />
                 <Pagination
-                  total={data.purchases.length}
+                  total={data.topups?.length ?? 0}
                   page={page}
                   setPage={setPage}
                 />
@@ -1017,12 +1017,16 @@ export default function AdminWorkspace({
                   <h2>확정된 보상 기준</h2>
                   <dl className="rules">
                     <div>
-                      <dt>최초 구매</dt>
-                      <dd>37만원 · 30만 PV · 한도 150만원</dd>
+                      <dt>최초 충전</dt>
+                      <dd>37만원 입금 → 30만 PV 충전</dd>
                     </div>
                     <div>
-                      <dt>재구매</dt>
-                      <dd>27만원 · 20만 PV · 한도 +150만원</dd>
+                      <dt>추가 충전</dt>
+                      <dd>27만원 입금 → 20만 PV 충전</dd>
+                    </div>
+                    <div>
+                      <dt>PV 상품 구매</dt>
+                      <dd>30만 PV 차감 · 한도 150만원 추가</dd>
                     </div>
                     <div>
                       <dt>추천 보너스</dt>
@@ -1034,7 +1038,7 @@ export default function AdminWorkspace({
                     </div>
                     <div>
                       <dt>후원 롤업</dt>
-                      <dd>재구매 PV 5% × 최대 13대</dd>
+                      <dd>1대당 10,000원 × 최대 13대</dd>
                     </div>
                     <div>
                       <dt>센터 등급</dt>
@@ -1095,7 +1099,7 @@ export default function AdminWorkspace({
                 <h2>센터 관리</h2>
                 <p className="muted small">
                   센터 수령 회원은 센터 등급으로 표시됩니다. 소속은 회원 정보
-                  수정에서 배정하며, 최초 구매 15,000원 · 재구매 10,000원이
+                  수정에서 배정하며, 30만 PV 상품 구매마다 15,000원이
                   발생합니다.
                 </p>
                 <div className="center-list">
@@ -1217,8 +1221,7 @@ export default function AdminWorkspace({
           >
             <div className="order-summary">
               <span>
-                {creditKind === "initial" ? "최초 구매" : "재구매"} · 활력단
-                15개
+                {creditKind === "initial" ? "최초 PV 충전" : "추가 PV 충전"}
               </span>
               <strong>{money(creditTerms.cash)}원</strong>
               <dl>
@@ -1228,7 +1231,7 @@ export default function AdminWorkspace({
                 </div>
                 <div>
                   <dt>추가 보너스 한도</dt>
-                  <dd>+{money(creditTerms.cap)}원</dd>
+                  <dd>충전 시 추가 없음 · 상품 구매 시 150만원</dd>
                 </div>
               </dl>
             </div>
@@ -1254,7 +1257,7 @@ export default function AdminWorkspace({
               현금 {money(creditTerms.cash)}원 입금을 확인했습니다.
             </label>
             <button className="button primary wide" disabled={busy}>
-              {busy ? "충전 중…" : "구매 승인 및 충전"}
+              {busy ? "충전 중…" : "PV 충전 확정"}
             </button>
           </form>
         </Modal>
@@ -1442,7 +1445,8 @@ export default function AdminWorkspace({
             <fieldset disabled={editRelationsLocked}>
               <legend>추천 · 후원 관계</legend>
               <p className="muted small">
-                첫 충전 또는 하위 회원 연결 이후에는 관계를 변경할 수 없습니다.
+                첫 상품 구매 또는 하위 회원 연결 이후에는 관계를 변경할 수
+                없습니다.
               </p>
               {(["referrer_id", "sponsor_id"] as const).map((key) => (
                 <label key={key}>
@@ -1756,6 +1760,42 @@ function TreeNode({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function TopupTable({
+  rows,
+  members,
+}: {
+  rows: NonNullable<AppData["topups"]>;
+  members: Member[];
+}) {
+  return (
+    <div className="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>충전일</th>
+            <th>회원</th>
+            <th>입금액</th>
+            <th>충전 PV</th>
+            <th>메모</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((p) => (
+            <tr key={p.id}>
+              <td>{date(p.created_at)}</td>
+              <td>{members.find((m) => m.id === p.member_id)?.name}</td>
+              <td>{money(p.cash)}원</td>
+              <td>+{money(p.pv)} PV</td>
+              <td>{p.note}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {!rows.length && <p className="empty">충전 기록이 없습니다.</p>}
     </div>
   );
 }

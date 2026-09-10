@@ -30,7 +30,7 @@ test("mobile shop spends PV once, persists shipment and explores separate trees"
     .getByRole("link", { name: "구매·배송" })
     .click();
   await expect(page.locator(".member-order-card")).toHaveCount(2);
-  await expect(page.getByText("300,000 PV 결제")).toBeVisible();
+  await expect(page.getByText("300,000 PV 결제").first()).toBeVisible();
   await page
     .getByRole("navigation", { name: "회원 앱 메뉴" })
     .getByRole("link", { name: "조직도" })
@@ -57,6 +57,8 @@ test("mobile shop spends PV once, persists shipment and explores separate trees"
   await page.goto("/admin");
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.locator("nav").getByRole("button", { name: "배송 관리" }).click();
-  await expect(page.getByText("PV 구매", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("PV 구매", { exact: true }).first(),
+  ).toBeVisible();
   expect(errors).toEqual([]);
 });

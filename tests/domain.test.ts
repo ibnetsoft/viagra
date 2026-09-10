@@ -14,15 +14,18 @@ test("only remaining 20,000 is paid; excess 70,000 expires", () => {
     expired: 90000,
   });
 });
-test("initial and repeat purchases each add a fixed 1,500,000 cap", () => {
+test("topups only credit PV without orders, cap or bonuses", () => {
   assert.equal(terms.initial.cap, 1500000);
   assert.equal(terms.repeat.cap, 1500000);
   const original = seedDemo(),
     id = crypto.randomUUID();
   const updated = demoCredit(original, "demo-0", "입금 확인", id);
   assert.equal(updated.members[0].pv, 500000);
-  assert.equal(updated.members[0].bonus_limit, 3000000);
-  assert.equal(updated.purchases[0].shipping_status, "pending");
+  assert.equal(updated.members[0].bonus_limit, original.members[0].bonus_limit);
+  assert.deepEqual(updated.bonuses, original.bonuses);
+  assert.deepEqual(updated.purchases, original.purchases);
+  assert.equal(updated.topups?.length, 8);
+
   const retried = demoCredit(updated, "demo-0", "재시도", id);
   assert.deepEqual(updated, retried);
 });

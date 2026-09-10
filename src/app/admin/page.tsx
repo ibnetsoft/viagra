@@ -45,7 +45,7 @@ export default async function Page() {
       </main>
     );
   async function readAll(
-    table: "members" | "purchases" | "bonuses" | "centers",
+    table: "members" | "purchases" | "bonuses" | "centers" | "pv_topups",
   ) {
     const rows: Record<string, unknown>[] = [];
     for (let offset = 0; ; offset += 500) {
@@ -70,6 +70,7 @@ export default async function Page() {
       .order("created_at", { ascending: false })
       .limit(100),
     readAll("centers"),
+    readAll("pv_topups"),
   ]);
   if (results.some((r) => r.error))
     return (
@@ -79,7 +80,7 @@ export default async function Page() {
         <a href="/admin">다시 시도</a>
       </main>
     );
-  const [members, purchases, bonuses, audits, centers] = results.map(
+  const [members, purchases, bonuses, audits, centers, topups] = results.map(
     (r) => r.data ?? [],
   );
   const { data: grade, error: gradeError } = await client.rpc("my_grade");
@@ -93,7 +94,8 @@ export default async function Page() {
       initialData={
         {
           members: membersWithGrade,
-          purchases,
+          purchases: purchases.filter((p) => p.payment_method === "pv"),
+          topups,
           bonuses,
           audits,
           centers,

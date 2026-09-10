@@ -100,7 +100,9 @@ export default async function Page({
       initialData={{
         products: productsResult.data ?? [],
         member: { ...member, grade: gradeResult.data } as Member,
-        purchases: purchases as Purchase[],
+        purchases: purchases.filter(
+          (p) => p.payment_method === "pv",
+        ) as Purchase[],
         bonuses: bonuses as Bonus[],
         centerName: centerResult.data?.name ?? null,
       }}

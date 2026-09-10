@@ -40,7 +40,7 @@ test("head shares the team pool once and separately receives the head pool", asy
         ]);
     }
     await db.query(
-      "insert into public.purchases(id,member_id,kind,cash,pv,cap_added,recipient,phone,address,note,created_by,created_at) values($1,$2,'repeat',270000,200000,1500000,'회원','010-0000-0000','서울','테스트',$2,now()-interval '1 day')",
+      "insert into public.purchases(id,member_id,kind,cash,pv,cap_added,recipient,phone,address,note,created_by,created_at,payment_method,pv_spent,product_id) values($1,$2,'repeat',0,200000,1500000,'회원','010-0000-0000','서울','테스트',$2,now()-interval '1 day','pv',200000,'caa14000-0000-4000-8000-000000000001')",
       [crypto.randomUUID(), ids[20]],
     );
     const close = () =>

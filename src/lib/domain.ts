@@ -64,7 +64,17 @@ export type Audit = {
   created_at: string;
 };
 export type Center = { id: string; name: string; owner_id: string };
+export type Topup = {
+  id: string;
+  member_id: string;
+  kind: "initial" | "repeat";
+  cash: number;
+  pv: number;
+  note: string;
+  created_at: string;
+};
 export type AppData = {
+  topups?: Topup[];
   members: Member[];
   purchases: Purchase[];
   bonuses: Bonus[];

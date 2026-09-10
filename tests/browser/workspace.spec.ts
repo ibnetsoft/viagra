@@ -15,10 +15,12 @@ test("administrator preview: recharge, shipping, membership, persistence and mob
   });
   await page.getByRole("button", { name: "수동 충전", exact: true }).click();
   const dialog = page.getByRole("dialog");
-  await expect(dialog.getByText("+1,500,000원")).toBeVisible();
+  await expect(
+    dialog.getByText("충전 시 추가 없음 · 상품 구매 시 150만원"),
+  ).toBeVisible();
   await dialog.getByLabel("입금 확인 메모").fill("테스트 입금 확인");
   await dialog.getByRole("checkbox").check();
-  await dialog.getByRole("button", { name: "구매 승인 및 충전" }).click();
+  await dialog.getByRole("button", { name: "PV 충전 확정" }).click();
   await expect(dialog).not.toBeVisible();
   await expect(
     page.locator(".stat-value").filter({ hasText: "2,860,000" }),
@@ -29,7 +31,7 @@ test("administrator preview: recharge, shipping, membership, persistence and mob
   ).toBeVisible();
   await page.locator("nav").getByRole("button", { name: "배송 관리" }).click();
   await page.getByRole("button", { name: "미배송", exact: true }).click();
-  const row = page.locator("tbody tr").filter({ hasText: "김민준" }).first();
+  const row = page.locator("tbody tr").filter({ hasText: "최유진" }).first();
   await row.getByRole("button", { name: "배송 처리" }).click();
   await dialog
     .getByRole("combobox", { name: "배송 상태", exact: true })
