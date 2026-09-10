@@ -1,0 +1,165 @@
+import { allocateBonus, type AppData, type Member, terms } from "./domain";
+const names = [
+  "김민준",
+  "이서연",
+  "박지훈",
+  "최유진",
+  "정도윤",
+  "한수빈",
+  "윤하준",
+];
+export function seedDemo(): AppData {
+  const members: Member[] = names.map((name, i) => ({
+    id: `demo-${i}`,
+    member_code: `VP${String(1001 + i)}`,
+    name,
+    email: `member${i + 1}@example.com`,
+    phone: "010-0000-0000",
+    postcode: "04524",
+    address: "서울특별시 중구 세종대로 110",
+    address_detail: "예시 배송지",
+    role: i === 0 ? "admin" : "member",
+    status: "active",
+    referrer_id: i ? `demo-${Math.max(0, i - 2)}` : null,
+    sponsor_id: i ? `demo-${Math.floor((i - 1) / 2)}` : null,
+    position: i ? (i % 2 ? "L" : "R") : null,
+    center_id: "center-demo",
+    pv: 300000,
+    bonus_limit: 1500000,
+    bonus_paid: 0,
+    created_at: new Date(Date.UTC(2026, 8, 1 + i)).toISOString(),
+  }));
+  const data: AppData = {
+    members,
+    purchases: members.map((m, i) => ({
+      id: `purchase-${i}`,
+      member_id: m.id,
+      kind: "initial",
+      cash: 370000,
+      pv: 300000,
+      cap_added: 1500000,
+      shipping_status: i < 3 ? "delivered" : "pending",
+      recipient: m.name,
+      phone: m.phone,
+      address: `(${m.postcode}) ${m.address} ${m.address_detail}`,
+      tracking: "",
+      note: "샘플 입금 확인",
+      created_at: m.created_at,
+    })),
+    bonuses: [],
+    audits: [],
+    centers: [{ id: "center-demo", name: "서울 센터", owner_id: "demo-0" }],
+  };
+  award(data, "demo-0", "demo-referral-1", "referral", 90000);
+  award(data, "demo-0", "demo-referral-2", "referral", 90000);
+  award(data, "demo-0", "triangle1:demo-0", "triangle1", 90000);
+  return data;
+}
+function award(
+  data: AppData,
+  id: string,
+  key: string,
+  kind: string,
+  gross: number,
+) {
+  if (data.bonuses.some((b) => b.member_id === id && b.event_key === key))
+    return;
+  const member = data.members.find((m) => m.id === id);
+  if (!member) return;
+  const allocation = allocateBonus(
+    gross,
+    member.status === "active" ? member.bonus_limit : 0,
+    member.bonus_paid,
+  );
+  member.bonus_paid += allocation.paid;
+  data.bonuses.unshift({
+    id: crypto.randomUUID(),
+    member_id: id,
+    event_key: key,
+    kind,
+    ...allocation,
+    reason: allocation.expired
+      ? member.status === "suspended"
+        ? "회원 정지"
+        : "지급 한도 초과"
+      : "",
+    created_at: new Date().toISOString(),
+  });
+}
+export function demoCredit(
+  original: AppData,
+  id: string,
+  note: string,
+  requestId: string,
+): AppData {
+  const data = structuredClone(original);
+  if (data.purchases.some((p) => p.id === requestId)) return data;
+  const member = data.members.find((m) => m.id === id);
+  if (!member || member.status !== "active")
+    throw new Error("충전할 수 없는 회원입니다.");
+  const kind = data.purchases.some((p) => p.member_id === id)
+    ? "repeat"
+    : "initial";
+  const t = terms[kind];
+  member.pv += t.pv;
+  member.bonus_limit += t.cap;
+  data.purchases.unshift({
+    id: requestId,
+    member_id: id,
+    kind,
+    cash: t.cash,
+    pv: t.pv,
+    cap_added: t.cap,
+    shipping_status: "pending",
+    recipient: member.name,
+    phone: member.phone,
+    address: `(${member.postcode}) ${member.address} ${member.address_detail}`,
+    tracking: "",
+    note,
+    created_at: new Date().toISOString(),
+  });
+  if (kind === "initial") {
+    let parent = member.referrer_id;
+    for (const rate of [0.3, 0.1]) {
+      if (!parent) break;
+      award(data, parent, `${requestId}:referral`, "referral", t.pv * rate);
+      parent = data.members.find((m) => m.id === parent)?.referrer_id ?? null;
+    }
+    for (const root of data.members.filter((m) => m.bonus_limit > 0)) {
+      const children = data.members.filter(
+        (m) => m.sponsor_id === root.id && m.bonus_limit > 0,
+      );
+      if (children.length !== 2) continue;
+      let beneficiary: Member | undefined = root;
+      for (let depth = 1; depth <= 3 && beneficiary; depth++) {
+        award(
+          data,
+          beneficiary.id,
+          `triangle${depth}:${root.id}`,
+          `triangle${depth}`,
+          depth === 3 ? 60000 : 90000,
+        );
+        beneficiary = data.members.find(
+          (m) => m.id === beneficiary?.sponsor_id,
+        );
+      }
+    }
+  } else {
+    let parent = member.sponsor_id;
+    for (let depth = 1; depth <= 13 && parent; depth++) {
+      award(data, parent, `${requestId}:rollup`, "rollup", 10000);
+      parent = data.members.find((m) => m.id === parent)?.sponsor_id ?? null;
+    }
+  }
+  const center = data.centers.find((c) => c.id === member.center_id);
+  if (center)
+    award(data, center.owner_id, `${requestId}:center`, "center", t.pv * 0.05);
+  data.audits.unshift({
+    id: crypto.randomUUID(),
+    action: "수동 충전",
+    actor: "데모 관리자",
+    detail: `${member.name} · ${t.cash.toLocaleString()}원 확인`,
+    created_at: new Date().toISOString(),
+  });
+  return data;
+}
