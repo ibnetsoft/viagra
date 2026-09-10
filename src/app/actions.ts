@@ -1,4 +1,5 @@
 "use server";
+import { cookies } from "next/headers";
 import { z } from "zod";
 import { configured, createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
@@ -81,6 +82,10 @@ export async function authenticate(form: FormData) {
 export async function logout(portal: "admin" | "member" = "member") {
   if (configured()) {
     const client = await createClient();
+    const jar = await cookies();
+    const device = jar.get("vp-push-device")?.value;
+    if (device) await client.rpc("unsubscribe_push", { p_id: device });
+    jar.delete("vp-push-device");
     await client.auth.signOut();
   }
   redirect(portal === "admin" ? "/admin/login" : "/login");

@@ -21,6 +21,7 @@ export default async function Page({
       "profile",
       "products",
       "organization",
+      "notifications",
     ].includes(section)
   )
     notFound();

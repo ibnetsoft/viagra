@@ -10,6 +10,18 @@ export function GET() {
     lang: "ko",
     icons: [
       {
+        src: "/app/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/app/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
         src: "/member-icon.svg",
         sizes: "any",
         type: "image/svg+xml",

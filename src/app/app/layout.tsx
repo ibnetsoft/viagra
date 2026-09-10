@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./member.css";
 export const metadata: Metadata = {
   title: "활력 | 나의 파트너 앱",
+  icons: { apple: "/app/icon-180.png" },
   manifest: "/app/manifest.webmanifest",
   appleWebApp: { capable: true, title: "활력", statusBarStyle: "default" },
 };

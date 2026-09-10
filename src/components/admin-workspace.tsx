@@ -35,6 +35,7 @@ import {
 } from "@/lib/domain";
 import { demoCredit, seedDemo } from "@/lib/demo";
 import BankFields from "./bank-fields";
+import AdminAnnouncements from "./admin-announcements";
 import SalesReport from "./sales-report";
 
 type Tab =
@@ -45,8 +46,10 @@ type Tab =
   | "shipping"
   | "organization"
   | "bonuses"
-  | "settings";
+  | "settings"
+  | "announcements";
 const tabs = [
+  { id: "announcements", label: "공지 관리", icon: CircleHelp },
   { id: "overview", label: "대시보드", icon: LayoutDashboard },
   { id: "sales", label: "매출 관리", icon: CreditCard },
   { id: "members", label: "회원 관리", icon: Users },
@@ -57,6 +60,10 @@ const tabs = [
   { id: "settings", label: "운영 설정", icon: Settings2 },
 ] as const;
 const titles: Record<Tab, [string, string]> = {
+  announcements: [
+    "공지 관리",
+    "회원에게 공지를 보내고 수신과 읽음 현황을 확인하세요.",
+  ],
   sales: [
     "매출 관리",
     "구매 승인일을 기준으로 기간별 매출과 구매 현황을 확인하세요.",
@@ -498,6 +505,9 @@ export default function AdminWorkspace({
                 </section>
               </div>
             </>
+          )}
+          {tab === "announcements" && (
+            <AdminAnnouncements demo={demo} members={data.members} />
           )}
           {tab === "sales" && (
             <SalesReport

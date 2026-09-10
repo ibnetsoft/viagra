@@ -19,11 +19,18 @@ import {
 import { bonusNames, date, money } from "@/lib/domain";
 import { type MemberData, memberSnapshot } from "@/lib/member-data";
 import { logout } from "@/app/actions";
+import MemberNotifications from "./member-notifications";
 import MemberBank from "./member-bank";
 import MemberShop from "./member-shop";
 import MemberOrganization from "./member-organization";
 export type MemberSection =
-  "home" | "bonuses" | "orders" | "profile" | "products" | "organization";
+  | "home"
+  | "bonuses"
+  | "orders"
+  | "profile"
+  | "products"
+  | "organization"
+  | "notifications";
 const nav = [
   { id: "home", href: "/app", label: "홈", icon: Home },
   { id: "products", href: "/app/products", label: "상품", icon: ShoppingBag },
@@ -82,6 +89,7 @@ export default function MemberApp({
             <Leaf size={22} />
             활력<span>PARTNERS</span>
           </Link>
+          <MemberNotifications demo={demo} memberId={member.id} />
           <Link
             href="/app/profile"
             className="member-avatar"
@@ -93,6 +101,9 @@ export default function MemberApp({
         <main className="member-content">
           {demo && (
             <div className="member-demo">회원 앱 미리보기 · 샘플 데이터</div>
+          )}
+          {section === "notifications" && (
+            <MemberNotifications demo={demo} memberId={member.id} inbox />
           )}
           {section === "products" && (
             <MemberShop data={data} demo={demo} onChange={setData} />
