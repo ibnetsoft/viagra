@@ -1,4 +1,48 @@
 @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap");
+.member-service {
+  margin: 18px;
+  border: 1px solid #cbded4;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f9fcfa;
+}
+.member-service-summary {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 0 23px 18px;
+  flex-wrap: wrap;
+}
+.member-service-summary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.member-service-summary span {
+  font-size: 11px;
+  color: #819389;
+}
+.member-service-summary strong {
+  font-size: 17px;
+  color: #345e4c;
+}
+.member-service-summary > .button {
+  margin-left: auto;
+}
+.member-service-help {
+  padding: 0 23px;
+  font-size: 11px;
+  color: #819389;
+  line-height: 1.8;
+}
+.member-service-button {
+  margin-right: 7px;
+}
+.member-service-button[aria-pressed="true"] {
+  background: #e5f1eb;
+  color: #17695a;
+  border-color: #b8d6c7;
+}
 :root {
   --bg: #f6f7f9;
   --panel: #fff;

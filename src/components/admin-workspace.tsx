@@ -108,6 +108,7 @@ export default function AdminWorkspace({
   const [orgRoot, setOrgRoot] = useState(userId),
     [page, setPage] = useState(1);
   const requestId = useRef("");
+  const [serviceMemberId, setServiceMemberId] = useState<string | null>(null);
   useEffect(() => {
     if (initialData) setData(initialData);
   }, [initialData]);
@@ -195,6 +196,10 @@ export default function AdminWorkspace({
       )),
   );
   const creditMember = member(creditId);
+  const serviceMember = member(serviceMemberId);
+  const serviceOrders = data.purchases
+    .filter((p) => p.member_id === serviceMemberId)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
   const creditKind = data.purchases.some((p) => p.member_id === creditId)
     ? "repeat"
     : "initial";
@@ -502,6 +507,122 @@ export default function AdminWorkspace({
           {tab === "sales" && <SalesReport purchases={data.purchases} />}
           {tab === "members" && (
             <section className="panel">
+              {serviceMember && (
+                <section
+                  className="member-service"
+                  aria-label="선택 회원 충전 및 배송"
+                >
+                  <div className="panel-heading">
+                    <div>
+                      <h2>{serviceMember.name} · 충전 및 배송</h2>
+                      <p>
+                        {serviceMember.member_code} · {serviceMember.phone}
+                      </p>
+                    </div>
+                    <button
+                      className="icon-button"
+                      aria-label="회원 처리 패널 닫기"
+                      onClick={() => setServiceMemberId(null)}
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                  <div className="member-service-summary">
+                    <div>
+                      <span>현재 PV</span>
+                      <strong>{money(serviceMember.pv)} PV</strong>
+                    </div>
+                    <div>
+                      <span>남은 보너스 한도</span>
+                      <strong>
+                        {money(
+                          serviceMember.bonus_limit - serviceMember.bonus_paid,
+                        )}
+                        원
+                      </strong>
+                    </div>
+                    <div>
+                      <span>미배송 주문</span>
+                      <strong>
+                        {
+                          serviceOrders.filter(
+                            (p) => p.shipping_status === "pending",
+                          ).length
+                        }
+                        건
+                      </strong>
+                    </div>
+                    <button
+                      className="button primary"
+                      disabled={serviceMember.status !== "active" || busy}
+                      onClick={() => openCredit(serviceMember.id)}
+                    >
+                      <Plus size={16} />
+                      입금 확인 · PV 충전
+                    </button>
+                  </div>
+                  <p className="member-service-help">
+                    입금을 확인하고 충전하면 미배송 주문이 자동으로 생성됩니다.
+                    아래에서 주문별 배송 상태를 처리하세요.
+                    {serviceMember.status !== "active" &&
+                      " 이용 정지 회원은 충전할 수 없습니다."}
+                  </p>
+                  <div className="table-scroll">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>구매일 / 구분</th>
+                          <th>금액 / 충전 PV</th>
+                          <th>주문 배송지</th>
+                          <th>배송 상태</th>
+                          <th>처리</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {serviceOrders.map((p) => (
+                          <tr key={p.id}>
+                            <td>
+                              {date(p.created_at)}
+                              <small className="table-sub">
+                                {p.kind === "initial" ? "최초 구매" : "재구매"}
+                              </small>
+                            </td>
+                            <td>
+                              {money(p.cash)}원
+                              <small className="table-sub">
+                                {money(p.pv)} PV
+                              </small>
+                            </td>
+                            <td className="address-cell">
+                              {p.address}
+                              {p.tracking && (
+                                <small className="table-sub">
+                                  {p.tracking}
+                                </small>
+                              )}
+                            </td>
+                            <td>
+                              <Badge status={p.shipping_status} />
+                            </td>
+                            <td>
+                              <button
+                                className="button compact"
+                                disabled={busy}
+                                onClick={() => setShipping(p)}
+                              >
+                                배송 처리
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {!serviceOrders.length && (
+                    <Empty text="아직 구매 내역이 없습니다. 입금 확인 후 첫 충전을 진행하세요." />
+                  )}
+                </section>
+              )}
               <div className="table-toolbar">
                 <div className="segmented">
                   {[
@@ -560,6 +681,13 @@ export default function AdminWorkspace({
                         <td>{money(m.bonus_limit - m.bonus_paid)}원</td>
                         <td>{member(m.referrer_id)?.name ?? "미배정"}</td>
                         <td>
+                          <button
+                            className="button compact member-service-button"
+                            onClick={() => setServiceMemberId(m.id)}
+                            aria-pressed={serviceMemberId === m.id}
+                          >
+                            충전·배송
+                          </button>
                           <button
                             className="button compact"
                             onClick={() => setEdit(m)}
