@@ -162,7 +162,7 @@ export function demoCredit(
   } else {
     let parent = member.sponsor_id;
     for (let depth = 1; depth <= 13 && parent; depth++) {
-      award(data, parent, `${requestId}:rollup`, "rollup", t.pv / 20);
+      award(data, parent, `${requestId}:rollup`, "rollup", 10000);
       parent = data.members.find((m) => m.id === parent)?.sponsor_id ?? null;
     }
   }

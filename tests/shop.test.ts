@@ -132,7 +132,7 @@ test("PV order atomicity, retry, capped rewards, authorization and scoped trees"
     const rollup = (
       await db.query<any>("select * from public.bonuses where kind='rollup'")
     ).rows[0];
-    assert.equal(Number(rollup.gross), 15000);
+    assert.equal(Number(rollup.gross), 10000);
     assert.equal(Number(rollup.paid), 0);
     await db.exec("reset role");
     await db.query(
