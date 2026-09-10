@@ -134,6 +134,9 @@ async function main() {
       ids[i],
       `scenario-${runId}-${i}@example.invalid`,
       JSON.stringify({
+        bank_name: "KB국민은행",
+        account_number: "000000000000",
+        account_holder: "테스트 회원",
         name,
         phone: "010-0000-0000",
         postcode: "00000",

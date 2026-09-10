@@ -24,6 +24,9 @@ test("PV order atomicity, retry, capped rewards, authorization and scoped trees"
         id,
         `${id}@example.com`,
         JSON.stringify({
+          bank_name: "KB국민은행",
+          account_number: "000000000000",
+          account_holder: "테스트 회원",
           name: "테스트",
           phone: "010-0000-0000",
           postcode: "04524",

@@ -1,4 +1,7 @@
 export type Member = {
+  bank_name?: string | null;
+  account_number?: string | null;
+  account_holder?: string | null;
   id: string;
   member_code: string;
   name: string;

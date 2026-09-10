@@ -19,6 +19,7 @@ import {
 import { bonusNames, date, money } from "@/lib/domain";
 import { type MemberData, memberSnapshot } from "@/lib/member-data";
 import { logout } from "@/app/actions";
+import MemberBank from "./member-bank";
 import MemberShop from "./member-shop";
 import MemberOrganization from "./member-organization";
 export type MemberSection =
@@ -395,6 +396,7 @@ export default function MemberApp({
                   연락처와 주소 변경은 관리자에게 요청해 주세요.
                 </p>
               </section>
+              <MemberBank data={data} demo={demo} onChange={setData} />
               <button
                 className="member-logout"
                 onClick={() =>

@@ -34,6 +34,7 @@ import {
   terms,
 } from "@/lib/domain";
 import { demoCredit, seedDemo } from "@/lib/demo";
+import BankFields from "./bank-fields";
 import SalesReport from "./sales-report";
 
 type Tab =
@@ -1345,6 +1346,12 @@ export default function AdminWorkspace({
                 postcode: String(f.get("postcode")),
                 address: String(f.get("address")),
                 address_detail: String(f.get("address_detail")),
+                bank_name: String(f.get("bank_name") ?? ""),
+                account_number: String(f.get("account_number") ?? "").replace(
+                  /[- ]/g,
+                  "",
+                ),
+                account_holder: String(f.get("account_holder") ?? ""),
                 status: String(f.get("status")) as Member["status"],
                 referrer_id: String(f.get("referrer_id") || "") || null,
                 sponsor_id: String(f.get("sponsor_id") || "") || null,
@@ -1435,6 +1442,8 @@ export default function AdminWorkspace({
                 maxLength={200}
               />
             </label>
+            <h3>계좌 정보</h3>
+            <BankFields member={edit} required={false} />
             <label>
               회원 상태
               <select name="status" defaultValue={edit.status}>

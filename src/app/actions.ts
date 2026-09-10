@@ -4,6 +4,7 @@ import { configured, createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { bankFields } from "@/lib/bank-details";
 const memberFields = z.object({
   name: z.string().trim().min(1).max(80),
   phone: z.string().regex(/^[0-9+\- ]{9,20}$/),
@@ -27,10 +28,13 @@ export async function authenticate(form: FormData) {
       return {
         error: "관리자 계정은 기존 회원에게 권한을 지정하여 생성합니다.",
       };
-    const profile = memberFields.safeParse(Object.fromEntries(form));
+    const profile = memberFields
+      .extend(bankFields.shape)
+      .safeParse(Object.fromEntries(form));
     if (!profile.success)
       return {
-        error: "이름, 연락처, 우편번호(5자리), 주소를 모두 확인하세요.",
+        error:
+          "회원정보와 은행, 계좌번호(숫자 8~20자리), 예금주를 모두 확인하세요.",
       };
     const { error } = await client.auth.signUp({
       ...credentials.data,
@@ -131,7 +135,15 @@ export async function mutate(
           center_id: uuid.nullable(),
         })
         .parse(payload);
-      rpc = "update_member";
+      rpc = "update_member_with_bank";
+      const rawBank = {
+        bank_name: payload.bank_name ?? "",
+        account_number: payload.account_number ?? "",
+        account_holder: payload.account_holder ?? "",
+      };
+      const bank = Object.values(rawBank).every((v) => v === "")
+        ? null
+        : bankFields.parse(rawBank);
       args = {
         p_member: p.id,
         p_name: p.name,
@@ -139,6 +151,9 @@ export async function mutate(
         p_postcode: p.postcode,
         p_address: p.address,
         p_detail: p.address_detail,
+        p_bank: bank?.bank_name ?? null,
+        p_account: bank?.account_number ?? null,
+        p_holder: bank?.account_holder ?? null,
         p_status: p.status,
         p_referrer: p.referrer_id,
         p_sponsor: p.sponsor_id,
@@ -226,4 +241,24 @@ export async function loadOrganization(
     p_offset: offset,
   });
   return error ? { error: error.message } : { data };
+}
+
+export async function saveMyBank(form: FormData): Promise<{ error?: string }> {
+  const bank = bankFields.safeParse(Object.fromEntries(form));
+  if (!bank.success)
+    return { error: "은행, 계좌번호(숫자 8~20자리), 예금주를 확인하세요." };
+  const client = await createClient();
+  const {
+    data: { user },
+  } = await client.auth.getUser();
+  if (!user) return { error: "로그인이 필요합니다." };
+  const { error } = await client.rpc("update_my_bank", {
+    p_bank: bank.data.bank_name,
+    p_account: bank.data.account_number,
+    p_holder: bank.data.account_holder,
+  });
+  if (error) return { error: error.message };
+  revalidatePath("/app", "layout");
+  revalidatePath("/admin");
+  return {};
 }

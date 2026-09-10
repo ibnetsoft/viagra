@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { ArrowUpRight, Leaf } from "lucide-react";
 import { authenticate } from "@/app/actions";
+import BankFields from "./bank-fields";
 export default function Login({
   connected,
   admin = false,
@@ -49,7 +50,7 @@ export default function Login({
           </h2>
           <p className="muted">
             {signup
-              ? "상품을 받을 정확한 주소를 입력해 주세요."
+              ? "배송지와 계좌 정보를 정확하게 입력해 주세요."
               : "이메일과 비밀번호로 로그인하세요."}
           </p>
           <form
@@ -152,6 +153,8 @@ export default function Login({
                     placeholder="동·호수 등"
                   />
                 </label>
+                <h3>계좌 정보</h3>
+                <BankFields />
               </>
             )}
             {message && (
