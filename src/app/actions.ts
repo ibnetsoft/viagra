@@ -28,17 +28,27 @@ export async function authenticate(form: FormData) {
       return {
         error: "관리자 계정은 기존 회원에게 권한을 지정하여 생성합니다.",
       };
-    const profile = memberFields
-      .extend(bankFields.shape)
-      .safeParse(Object.fromEntries(form));
+    const profile = memberFields.safeParse(Object.fromEntries(form));
+    const rawBank = {
+      bank_name: String(form.get("bank_name") ?? "").trim(),
+      account_number: String(form.get("account_number") ?? "").trim(),
+      account_holder: String(form.get("account_holder") ?? "").trim(),
+    };
+    const hasBank = Object.values(rawBank).some(Boolean);
+    const bank = hasBank ? bankFields.safeParse(rawBank) : null;
+    if (bank && !bank.success)
+      return {
+        error: "계좌를 등록하려면 은행, 계좌번호, 예금주를 모두 확인하세요.",
+      };
     if (!profile.success)
       return {
-        error:
-          "회원정보와 은행, 계좌번호(숫자 8~20자리), 예금주를 모두 확인하세요.",
+        error: "이름, 연락처, 우편번호, 주소를 확인하세요.",
       };
     const { error } = await client.auth.signUp({
       ...credentials.data,
-      options: { data: profile.data },
+      options: {
+        data: { ...profile.data, ...(bank?.success ? bank.data : {}) },
+      },
     });
     if (error)
       return {

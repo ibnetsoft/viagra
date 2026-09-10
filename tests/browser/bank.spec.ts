@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-test("signup requires bank details and saved member bank is visible to admin", async ({
+test("signup allows optional bank details and saved member bank is visible to admin", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -11,7 +11,7 @@ test("signup requires bank details and saved member bank is visible to admin", a
         name,
         exact: true,
       }),
-    ).toHaveAttribute("required", "");
+    ).not.toHaveAttribute("required", "");
   await page.goto("/app/profile");
   await page.getByRole("button", { name: "계좌 등록", exact: true }).click();
   await page

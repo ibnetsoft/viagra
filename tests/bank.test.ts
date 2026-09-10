@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 import { bankFields } from "../src/lib/bank-details";
-test("bank details required at signup, preserve leading zero, private and checked updates", async () => {
+test("bank details optional at signup, preserve leading zero, private and checked updates", async () => {
   const db = new PGlite();
   try {
     await db.exec(
@@ -20,11 +20,26 @@ test("bank details required at signup, preserve leading zero, private and checke
       postcode: "00000",
       address: "테스트 주소",
     };
+    const noBank = crypto.randomUUID();
+    await db.query("insert into auth.users values($1,$2,$3)", [
+      noBank,
+      "optional@example.invalid",
+      JSON.stringify(info),
+    ]);
+    assert.equal(
+      (
+        await db.query<any>(
+          "select bank_name from public.members where id=$1",
+          [noBank],
+        )
+      ).rows[0].bank_name,
+      null,
+    );
     await assert.rejects(
       db.query("insert into auth.users values($1,$2,$3)", [
         crypto.randomUUID(),
         "invalid@example.invalid",
-        JSON.stringify(info),
+        JSON.stringify({ ...info, bank_name: "신한은행" }),
       ]),
       /계좌번호/,
     );

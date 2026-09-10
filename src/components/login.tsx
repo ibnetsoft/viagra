@@ -50,7 +50,7 @@ export default function Login({
           </h2>
           <p className="muted">
             {signup
-              ? "배송지와 계좌 정보를 정확하게 입력해 주세요."
+              ? "배송지를 입력해 주세요. 계좌 정보는 가입 후 등록해도 됩니다."
               : "이메일과 비밀번호로 로그인하세요."}
           </p>
           <form
@@ -153,8 +153,8 @@ export default function Login({
                     placeholder="동·호수 등"
                   />
                 </label>
-                <h3>계좌 정보</h3>
-                <BankFields />
+                <h3>계좌 정보 (선택)</h3>
+                <BankFields required={false} />
               </>
             )}
             {message && (
