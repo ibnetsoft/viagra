@@ -19,7 +19,18 @@ export type Member = {
   bonus_paid: number;
   created_at: string;
 };
+export type Product = {
+  id: string;
+  name: string;
+  description: string;
+  pv_price: number;
+  active: boolean;
+};
 export type Purchase = {
+  payment_method?: "cash" | "pv";
+  product_id?: string | null;
+  product_name?: string;
+  pv_spent?: number;
   id: string;
   member_id: string;
   kind: "initial" | "repeat";

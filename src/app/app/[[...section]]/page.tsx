@@ -14,7 +14,14 @@ export default async function Page({
   const section = segments?.[0] ?? "home";
   if (
     (segments?.length ?? 0) > 1 ||
-    !["home", "bonuses", "orders", "profile"].includes(section)
+    ![
+      "home",
+      "bonuses",
+      "orders",
+      "profile",
+      "products",
+      "organization",
+    ].includes(section)
   )
     notFound();
   if (!configured()) {
@@ -70,25 +77,28 @@ export default async function Page({
       if (data.length < 500) return rows;
     }
   }
-  const [purchases, bonuses, gradeResult, centerResult] = await Promise.all([
-    ownRows("purchases"),
-    ownRows("bonuses"),
-    client.rpc("my_grade"),
-    member.center_id
-      ? client
-          .from("centers")
-          .select("name")
-          .eq("id", member.center_id)
-          .single()
-      : Promise.resolve({ data: null, error: null }),
-  ]);
-  if (gradeResult.error || centerResult.error)
+  const [purchases, bonuses, gradeResult, centerResult, productsResult] =
+    await Promise.all([
+      ownRows("purchases"),
+      ownRows("bonuses"),
+      client.rpc("my_grade"),
+      member.center_id
+        ? client
+            .from("centers")
+            .select("name")
+            .eq("id", member.center_id)
+            .single()
+        : Promise.resolve({ data: null, error: null }),
+      client.from("products").select("*").eq("active", true).order("name"),
+    ]);
+  if (gradeResult.error || centerResult.error || productsResult.error)
     throw new Error("회원 정보를 불러오지 못했습니다.");
   return (
     <MemberApp
       demo={false}
       section={section as MemberSection}
       initialData={{
+        products: productsResult.data ?? [],
         member: { ...member, grade: gradeResult.data } as Member,
         purchases: purchases as Purchase[],
         bonuses: bonuses as Bonus[],

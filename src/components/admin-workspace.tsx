@@ -346,7 +346,7 @@ export default function AdminWorkspace({
                   foot={`구매 회원 ${purchased}명 · 가입 대기 ${data.members.length - purchased}명`}
                 />
                 <Stat
-                  label={"누적 구매 금액"}
+                  label={"누적 현금 매출"}
                   value={money(sales)}
                   unit="원"
                   icon={<Wallet size={20} />}
@@ -373,7 +373,7 @@ export default function AdminWorkspace({
                   <div className="panel-heading">
                     <div>
                       <h2>최근 구매 현황</h2>
-                      <p>입금 확인과 함께 기록된 구매 내역입니다.</p>
+                      <p>현금 구매와 PV 상품 구매 내역입니다.</p>
                     </div>
                     <button
                       className="text-button"
@@ -447,7 +447,11 @@ export default function AdminWorkspace({
                         <strong>{p.recipient}</strong>
                         <p>
                           활력단 15개 ·{" "}
-                          {p.kind === "initial" ? "최초 구매" : "재구매"}{" "}
+                          {p.payment_method === "pv"
+                            ? "PV 구매"
+                            : p.kind === "initial"
+                              ? "최초 구매"
+                              : "재구매"}{" "}
                           <span>· {date(p.created_at)}</span>
                         </p>
                       </div>
@@ -584,13 +588,20 @@ export default function AdminWorkspace({
                             <td>
                               {date(p.created_at)}
                               <small className="table-sub">
-                                {p.kind === "initial" ? "최초 구매" : "재구매"}
+                                {p.payment_method === "pv"
+                                  ? "PV 구매"
+                                  : p.kind === "initial"
+                                    ? "최초 구매"
+                                    : "재구매"}
                               </small>
                             </td>
                             <td>
                               {money(p.cash)}원
                               <small className="table-sub">
-                                {money(p.pv)} PV
+                                {p.payment_method === "pv"
+                                  ? `−${money(p.pv_spent ?? 0)}`
+                                  : money(p.pv)}{" "}
+                                PV
                               </small>
                             </td>
                             <td className="address-cell">
@@ -835,7 +846,11 @@ export default function AdminWorkspace({
                         <td>
                           활력단 15개
                           <small className="table-sub">
-                            {p.kind === "initial" ? "최초 구매" : "재구매"}
+                            {p.payment_method === "pv"
+                              ? "PV 구매"
+                              : p.kind === "initial"
+                                ? "최초 구매"
+                                : "재구매"}
                           </small>
                         </td>
                         <td className="address-cell">{p.address}</td>
@@ -1575,12 +1590,19 @@ function PurchaseTable({
                   <span
                     className={`type-badge ${p.kind === "repeat" ? "repeat" : ""}`}
                   >
-                    {p.kind === "initial" ? "최초 구매" : "재구매"}
+                    {p.payment_method === "pv"
+                      ? "PV 구매"
+                      : p.kind === "initial"
+                        ? "최초 구매"
+                        : "재구매"}
                   </span>
                 </td>
                 <td>{money(p.cash)}원</td>
                 <td>
-                  {money(p.pv)} <small>PV</small>
+                  {p.payment_method === "pv"
+                    ? `−${money(p.pv_spent ?? 0)}`
+                    : money(p.pv)}{" "}
+                  <small>PV</small>
                 </td>
                 <td>
                   <Badge status={p.shipping_status} />

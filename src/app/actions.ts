@@ -180,3 +180,50 @@ export async function mutate(
     };
   }
 }
+
+export async function buyProduct(
+  product: string,
+  request: string,
+): Promise<{ error?: string }> {
+  const parsed = z
+    .object({ product: z.uuid(), request: z.uuid() })
+    .safeParse({ product, request });
+  if (!parsed.success) return { error: "상품 정보를 확인하세요." };
+  const client = await createClient();
+  const {
+    data: { user },
+  } = await client.auth.getUser();
+  if (!user) return { error: "로그인이 필요합니다." };
+  const { error } = await client.rpc("buy_product", {
+    p_product: product,
+    p_request: request,
+  });
+  if (error) return { error: error.message };
+  revalidatePath("/app", "layout");
+  revalidatePath("/admin");
+  return {};
+}
+export async function loadOrganization(
+  mode: "referral" | "sponsor",
+  root: string | null,
+  offset = 0,
+) {
+  const client = await createClient();
+  const {
+    data: { user },
+  } = await client.auth.getUser();
+  if (!user) return { error: "로그인이 필요합니다." };
+  if (
+    !["referral", "sponsor"].includes(mode) ||
+    (root && !z.uuid().safeParse(root).success) ||
+    !Number.isSafeInteger(offset) ||
+    offset < 0
+  )
+    return { error: "조회 조건을 확인하세요." };
+  const { data, error } = await client.rpc("my_organization", {
+    p_mode: mode,
+    p_root: root,
+    p_offset: offset,
+  });
+  return error ? { error: error.message } : { data };
+}

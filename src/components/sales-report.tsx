@@ -73,7 +73,9 @@ export default function SalesReport({ purchases }: { purchases: Purchase[] }) {
       <section className="panel">
         <div className="panel-heading">
           <h2>기간별 매출 상세</h2>
-          <span className="muted small">한국 시간 · 입금 승인 기준</span>
+          <span className="muted small">
+            한국 시간 · 현금 매출과 PV 사용 구분
+          </span>
         </div>
         <div className="table-scroll">
           <table>
@@ -83,7 +85,7 @@ export default function SalesReport({ purchases }: { purchases: Purchase[] }) {
                 <th>회원</th>
                 <th>구매 구분</th>
                 <th>매출액</th>
-                <th>충전 PV</th>
+                <th>PV 충전 / 사용</th>
                 <th>배송</th>
               </tr>
             </thead>
@@ -92,9 +94,20 @@ export default function SalesReport({ purchases }: { purchases: Purchase[] }) {
                 <tr key={p.id}>
                   <td>{date(p.created_at)}</td>
                   <td>{p.recipient}</td>
-                  <td>{p.kind === "initial" ? "최초 구매" : "재구매"}</td>
+                  <td>
+                    {p.payment_method === "pv"
+                      ? "PV 구매"
+                      : p.kind === "initial"
+                        ? "최초 구매"
+                        : "재구매"}
+                  </td>
                   <td>{money(p.cash)}원</td>
-                  <td>{money(p.pv)} PV</td>
+                  <td>
+                    {p.payment_method === "pv"
+                      ? `−${money(p.pv_spent ?? 0)}`
+                      : money(p.pv)}{" "}
+                    PV
+                  </td>
                   <td>
                     {p.shipping_status === "delivered" ? "배송완료" : "미배송"}
                   </td>

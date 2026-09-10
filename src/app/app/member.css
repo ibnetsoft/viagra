@@ -542,3 +542,230 @@
     font-size: 21px;
   }
 }
+
+.member-bottom-nav {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+.member-bottom-nav a {
+  min-width: 0;
+  padding-inline: 2px;
+}
+.member-bottom-nav a span {
+  font-size: 10px;
+  white-space: nowrap;
+}
+.member-shop-balance {
+  background: #205e4e;
+  color: white;
+  padding: 22px;
+  border-radius: 20px;
+  margin-bottom: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.member-shop-balance strong {
+  font-size: 28px;
+}
+.member-shop-balance small {
+  font-size: 13px;
+  font-weight: 400;
+}
+.member-product-art {
+  background: linear-gradient(135deg, #e8efdf, #d3e2d1);
+  border-radius: 14px;
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  color: #205e4e;
+  margin-bottom: 24px;
+}
+.member-product-art div {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.member-product-art strong {
+  font-size: 38px;
+  letter-spacing: 7px;
+}
+.member-product-art span {
+  font-size: 8px;
+  letter-spacing: 2px;
+}
+.member-product-art small {
+  font-size: 10px;
+}
+.member-product > p {
+  font-size: 12px;
+  color: #74836a;
+  line-height: 1.7;
+}
+.member-product-price {
+  display: block;
+  font-size: 24px;
+  margin: 20px 0;
+}
+.member-product-price small {
+  font-size: 13px;
+}
+.member-primary {
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  background: #205e4e;
+  color: white;
+  padding: 16px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.member-primary:disabled {
+  background: #dfe5d8;
+  color: #708064;
+  cursor: default;
+}
+.member-shop-success {
+  padding: 16px;
+  background: #e5efdf;
+  border-radius: 12px;
+  margin-bottom: 18px;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.member-shop-success a {
+  display: block;
+  color: #205e4e;
+}
+.member-shop-error {
+  color: #a33232;
+  font-size: 13px;
+}
+.member-checkout {
+  border: 0;
+  border-radius: 22px;
+  padding: 24px;
+  width: calc(100% - 32px);
+  max-width: 432px;
+  max-height: 85dvh;
+  overflow: auto;
+  color: #203c31;
+}
+.member-checkout::backdrop {
+  background: #102a24a6;
+}
+.member-checkout h3 {
+  font-size: 14px;
+  margin-top: 24px;
+}
+.member-checkout .member-section-heading button {
+  background: transparent;
+  border: 0;
+  padding: 8px;
+  color: inherit;
+}
+.member-checkout .member-primary {
+  margin-top: 18px;
+}
+.member-org-path {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  margin: 18px 0;
+  font-size: 11px;
+}
+.member-org-path button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #dfe5d8;
+  background: white;
+  border-radius: 8px;
+  padding: 10px;
+  color: #205e4e;
+  cursor: pointer;
+}
+.member-org-path button:disabled {
+  opacity: 0.4;
+}
+.member-org-root {
+  border: 1px solid #bfd1bd;
+  background: #edf3e7;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  border-radius: 14px;
+  padding: 20px;
+  color: #205e4e;
+}
+.member-org-root small,
+.member-org-node small {
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+.member-org-root span {
+  font-size: 11px;
+}
+.member-org-children {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding-top: 25px;
+}
+.member-org-branch {
+  position: relative;
+  min-width: 0;
+  text-align: center;
+}
+.member-org-branch:before {
+  content: "";
+  position: absolute;
+  height: 25px;
+  width: 1px;
+  background: #b7cbb4;
+  top: -25px;
+  left: 50%;
+}
+.member-org-branch > span {
+  font-size: 10px;
+  color: #6b805d;
+  display: block;
+  margin-bottom: 8px;
+}
+.member-org-node {
+  width: 100%;
+  min-height: 115px;
+  border: 1px solid #d6e1ce;
+  border-radius: 12px;
+  background: white;
+  color: #205e4e;
+  padding: 14px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+}
+.member-org-node strong {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.member-org-node span {
+  display: flex;
+  align-items: center;
+  font-size: 10px;
+  color: #798c6a;
+}
+.member-org-vacant {
+  padding: 35px 5px;
+  border: 1px dashed #d6e1ce;
+  border-radius: 12px;
+  color: #8b9c7e;
+  font-size: 12px;
+}

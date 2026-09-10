@@ -1,4 +1,10 @@
-import { allocateBonus, type AppData, type Member, terms } from "./domain";
+import {
+  allocateBonus,
+  type AppData,
+  type Member,
+  type Product,
+  terms,
+} from "./domain";
 const names = [
   "김민준",
   "이서연",
@@ -91,6 +97,7 @@ export function demoCredit(
   id: string,
   note: string,
   requestId: string,
+  product?: Product,
 ): AppData {
   const data = structuredClone(original);
   if (data.purchases.some((p) => p.id === requestId)) return data;
@@ -100,14 +107,22 @@ export function demoCredit(
   const kind = data.purchases.some((p) => p.member_id === id)
     ? "repeat"
     : "initial";
-  const t = terms[kind];
-  member.pv += t.pv;
+  const t = product
+    ? { cash: 0, pv: product.pv_price, cap: 1500000 }
+    : terms[kind];
+  if (product && (!product.active || member.pv < t.pv))
+    throw new Error("보유 PV가 부족합니다.");
+  member.pv += product ? -t.pv : t.pv;
   member.bonus_limit += t.cap;
   data.purchases.unshift({
     id: requestId,
     member_id: id,
     kind,
     cash: t.cash,
+    payment_method: product ? "pv" : "cash",
+    product_id: product?.id,
+    product_name: product?.name ?? "활력단 15개",
+    pv_spent: product ? t.pv : 0,
     pv: t.pv,
     cap_added: t.cap,
     shipping_status: "pending",
@@ -147,7 +162,7 @@ export function demoCredit(
   } else {
     let parent = member.sponsor_id;
     for (let depth = 1; depth <= 13 && parent; depth++) {
-      award(data, parent, `${requestId}:rollup`, "rollup", 10000);
+      award(data, parent, `${requestId}:rollup`, "rollup", t.pv / 20);
       parent = data.members.find((m) => m.id === parent)?.sponsor_id ?? null;
     }
   }
@@ -156,7 +171,7 @@ export function demoCredit(
     award(data, center.owner_id, `${requestId}:center`, "center", t.pv * 0.05);
   data.audits.unshift({
     id: crypto.randomUUID(),
-    action: "수동 충전",
+    action: product ? "PV 상품 구매" : "수동 충전",
     actor: "데모 관리자",
     detail: `${member.name} · ${t.cash.toLocaleString()}원 확인`,
     created_at: new Date().toISOString(),

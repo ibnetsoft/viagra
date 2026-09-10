@@ -6,6 +6,8 @@ import {
   ArrowUpRight,
   ChevronRight,
   Home,
+  ShoppingBag,
+  Network,
   Leaf,
   LogOut,
   Package,
@@ -17,9 +19,19 @@ import {
 import { bonusNames, date, money } from "@/lib/domain";
 import { type MemberData, memberSnapshot } from "@/lib/member-data";
 import { logout } from "@/app/actions";
-export type MemberSection = "home" | "bonuses" | "orders" | "profile";
+import MemberShop from "./member-shop";
+import MemberOrganization from "./member-organization";
+export type MemberSection =
+  "home" | "bonuses" | "orders" | "profile" | "products" | "organization";
 const nav = [
   { id: "home", href: "/app", label: "홈", icon: Home },
+  { id: "products", href: "/app/products", label: "상품", icon: ShoppingBag },
+  {
+    id: "organization",
+    href: "/app/organization",
+    label: "조직도",
+    icon: Network,
+  },
   { id: "bonuses", href: "/app/bonuses", label: "보너스", icon: Wallet },
   { id: "orders", href: "/app/orders", label: "구매·배송", icon: Package },
   { id: "profile", href: "/app/profile", label: "내 정보", icon: UserRound },
@@ -80,6 +92,12 @@ export default function MemberApp({
         <main className="member-content">
           {demo && (
             <div className="member-demo">회원 앱 미리보기 · 샘플 데이터</div>
+          )}
+          {section === "products" && (
+            <MemberShop data={data} demo={demo} onChange={setData} />
+          )}
+          {section === "organization" && (
+            <MemberOrganization demo={demo} memberId={member.id} />
           )}
           {section === "home" && (
             <>
@@ -166,7 +184,7 @@ export default function MemberApp({
                       <Package />
                     </span>
                     <div>
-                      <strong>활력단 15개</strong>
+                      <strong>{latest.product_name ?? "활력단 15개"}</strong>
                       <p>
                         {date(latest.created_at)} 구매 ·{" "}
                         {latest.kind === "initial" ? "첫 구매" : "재구매"}
@@ -298,15 +316,22 @@ export default function MemberApp({
                         <Package size={28} />
                       </span>
                       <div>
-                        <h2>활력단 15개</h2>
+                        <h2>{p.product_name ?? "활력단 15개"}</h2>
                         <p>
                           {p.kind === "initial" ? "최초 구매" : "재구매"} ·{" "}
-                          {money(p.cash)}원
+                          {p.payment_method === "pv"
+                            ? `${money(p.pv_spent ?? 0)} PV 결제`
+                            : `${money(p.cash)}원`}
                         </p>
                       </div>
                     </div>
                     <div className="member-order-points">
-                      <span>+{money(p.pv)} PV</span>
+                      <span>
+                        {p.payment_method === "pv"
+                          ? `−${money(p.pv_spent ?? 0)}`
+                          : `+${money(p.pv)}`}{" "}
+                        PV
+                      </span>
                       <span>한도 +{money(p.cap_added)}원</span>
                     </div>
                     <div className="member-delivery">
@@ -322,8 +347,9 @@ export default function MemberApp({
                   </section>
                 ))}
               <p className="member-explanation">
-                구매와 PV 충전은 입금 확인 후 관리자가 처리해요. 배송지 변경은
-                발송 전에 관리자에게 문의해 주세요.
+                상품 메뉴에서 PV로 구매할 수 있어요. PV 충전은 입금 확인 후
+                관리자가 처리해요. 배송지 변경은 발송 전에 관리자에게 문의해
+                주세요.
               </p>
             </>
           )}

@@ -16,6 +16,12 @@ test("Postgres integration: authorization, atomic credits, shipping, triangles, 
         "utf8",
       ),
     );
+    await db.exec(
+      await readFile(
+        "supabase/migrations/20260910103130_member_shop_and_organization.sql",
+        "utf8",
+      ),
+    );
     const ids = Array.from({ length: 18 }, () => crypto.randomUUID());
     for (let i = 0; i < ids.length; i++)
       await db.query(`insert into auth.users values($1,$2,$3)`, [
