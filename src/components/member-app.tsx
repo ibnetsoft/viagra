@@ -20,6 +20,7 @@ import { bonusNames, date, money } from "@/lib/domain";
 import { type MemberData, memberSnapshot } from "@/lib/member-data";
 import { logout } from "@/app/actions";
 import MemberNotifications from "./member-notifications";
+import { MemberThemeToggle, MemberThemeSettings } from "./member-theme";
 import MemberBank from "./member-bank";
 import MemberShop from "./member-shop";
 import MemberOrganization from "./member-organization";
@@ -90,6 +91,7 @@ export default function MemberApp({
             활력<span>PARTNERS</span>
           </Link>
           <MemberNotifications demo={demo} memberId={member.id} />
+          <MemberThemeToggle />
           <Link
             href="/app/profile"
             className="member-avatar"
@@ -407,6 +409,7 @@ export default function MemberApp({
                   연락처와 주소 변경은 관리자에게 요청해 주세요.
                 </p>
               </section>
+              <MemberThemeSettings />
               <MemberBank data={data} demo={demo} onChange={setData} />
               <button
                 className="member-logout"

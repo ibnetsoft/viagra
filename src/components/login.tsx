@@ -1,4 +1,5 @@
 "use client";
+import { MemberThemeToggle } from "./member-theme";
 import { useState } from "react";
 import { ArrowUpRight, Leaf } from "lucide-react";
 import { authenticate } from "@/app/actions";
@@ -40,6 +41,11 @@ export default function Login({
       </section>
       <section className="auth-form">
         <div className="auth-inner">
+          {!admin && (
+            <div className="member-login-theme">
+              <MemberThemeToggle />
+            </div>
+          )}
           <span className="eyebrow">WELCOME TO VITAL</span>
           <h2>
             {admin

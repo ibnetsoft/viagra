@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./member.css";
+import MemberTheme from "@/components/member-theme";
 export const metadata: Metadata = {
   title: "활력 | 나의 파트너 앱",
   icons: { apple: "/app/icon-180.png" },
@@ -13,5 +14,5 @@ export const viewport: Viewport = {
   themeColor: "#17695a",
 };
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return children;
+  return <MemberTheme>{children}</MemberTheme>;
 }
