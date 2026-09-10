@@ -186,13 +186,6 @@ export default function AdminWorkspace({
   const purchased = data.members.filter((m) => m.bonus_limit > 0).length;
   const sales = (data.topups ?? []).reduce((a, p) => a + p.cash, 0),
     paid = data.bonuses.reduce((a, b) => a + b.paid, 0);
-  const editRelationsLocked = Boolean(
-    edit &&
-    (edit.bonus_limit > 0 ||
-      data.members.some(
-        (m) => m.referrer_id === edit.id || m.sponsor_id === edit.id,
-      )),
-  );
   const creditMember = member(creditId);
   const serviceMember = member(serviceMemberId);
   const serviceOrders = data.purchases
@@ -1451,11 +1444,11 @@ export default function AdminWorkspace({
                 <option value="suspended">이용 정지</option>
               </select>
             </label>
-            <fieldset disabled={editRelationsLocked}>
+            <fieldset>
               <legend>추천 · 후원 관계</legend>
               <p className="muted small">
-                첫 상품 구매 또는 하위 회원 연결 이후에는 관계를 변경할 수
-                없습니다.
+                구매 이력과 관계없이 관리자가 수정할 수 있습니다. 하위 회원은
+                현재 회원을 따라 이동하며, 기존 보너스 기록은 유지됩니다.
               </p>
               {(["referrer_id", "sponsor_id"] as const).map((key) => (
                 <label key={key}>
@@ -1481,25 +1474,6 @@ export default function AdminWorkspace({
                 </select>
               </label>
             </fieldset>
-            {editRelationsLocked && (
-              <>
-                <input
-                  type="hidden"
-                  name="referrer_id"
-                  value={edit.referrer_id ?? ""}
-                />
-                <input
-                  type="hidden"
-                  name="sponsor_id"
-                  value={edit.sponsor_id ?? ""}
-                />
-                <input
-                  type="hidden"
-                  name="position"
-                  value={edit.position ?? ""}
-                />
-              </>
-            )}
             <label>
               소속 센터
               <select name="center_id" defaultValue={edit.center_id ?? ""}>
