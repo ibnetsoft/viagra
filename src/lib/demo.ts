@@ -24,7 +24,7 @@ export function seedDemo(): AppData {
     postcode: "04524",
     address: "서울특별시 중구 세종대로 110",
     address_detail: "예시 배송지",
-    role: i === 0 ? "admin" : "member",
+    role: "member",
     status: "active",
     referrer_id: i ? `demo-${Math.max(0, i - 2)}` : null,
     sponsor_id: i ? `demo-${Math.floor((i - 1) / 2)}` : null,
@@ -70,6 +70,21 @@ export function seedDemo(): AppData {
   award(data, "demo-0", "demo-referral-1", "referral", 90000);
   award(data, "demo-0", "demo-referral-2", "referral", 90000);
   award(data, "demo-0", "triangle1:demo-0", "triangle1", 90000);
+  data.members.push({
+    ...members[0],
+    id: "demo-admin",
+    name: "운영 관리자",
+    member_code: "ADMIN",
+    email: "admin@example.com",
+    role: "admin",
+    referrer_id: null,
+    sponsor_id: null,
+    position: null,
+    center_id: null,
+    pv: 0,
+    bonus_limit: 0,
+    bonus_paid: 0,
+  });
   return data;
 }
 function award(
@@ -82,7 +97,7 @@ function award(
   if (data.bonuses.some((b) => b.member_id === id && b.event_key === key))
     return;
   const member = data.members.find((m) => m.id === id);
-  if (!member) return;
+  if (!member || member.role !== "member") return;
   const allocation = allocateBonus(
     gross,
     member.status === "active" ? member.bonus_limit : 0,
@@ -117,7 +132,7 @@ export function demoCredit(
   )
     return data;
   const member = data.members.find((m) => m.id === id);
-  if (!member || member.status !== "active")
+  if (!member || member.role !== "member" || member.status !== "active")
     throw new Error("충전할 수 없는 회원입니다.");
   if (!product) {
     data.topups ??= [];

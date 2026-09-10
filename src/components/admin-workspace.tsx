@@ -141,6 +141,19 @@ export default function AdminWorkspace({
       return () => clearTimeout(timer);
     }
   }, [toast]);
+  const businessMembers = data.members.filter((m) => m.role === "member");
+  const networkRoot = businessMembers.some((m) => m.id === orgRoot)
+    ? orgRoot
+    : (businessMembers.find(
+        (m) =>
+          !businessMembers.some(
+            (parent) =>
+              parent.id ===
+              m[orgMode === "sponsor" ? "sponsor_id" : "referrer_id"],
+          ),
+      )?.id ??
+      businessMembers[0]?.id ??
+      "");
   const me = data.members.find((m) => m.id === userId) ?? data.members[0];
   const member = (id: string | null) => data.members.find((m) => m.id === id);
   const selectTab = (t: Tab) => {
@@ -181,7 +194,7 @@ export default function AdminWorkspace({
     requestId.current = crypto.randomUUID();
     setCreditId(id);
   };
-  const filtered = data.members.filter(
+  const filtered = businessMembers.filter(
     (m) =>
       `${m.name} ${m.member_code} ${m.phone}`
         .toLowerCase()
@@ -190,7 +203,7 @@ export default function AdminWorkspace({
       (filter !== "pending" || m.bonus_limit === 0),
   );
   const pending = data.purchases.filter((p) => p.shipping_status === "pending");
-  const purchased = data.members.filter((m) => m.bonus_limit > 0).length;
+  const purchased = businessMembers.filter((m) => m.bonus_limit > 0).length;
   const sales = (data.topups ?? []).reduce((a, p) => a + p.cash, 0),
     paid = data.bonuses.reduce((a, b) => a + b.paid, 0);
   const creditMember = member(creditId);
@@ -326,7 +339,7 @@ export default function AdminWorkspace({
             {
               <button
                 className="button primary"
-                onClick={() => openCredit(me.id)}
+                onClick={() => selectTab("credit")}
               >
                 <Plus size={17} />
                 수동 충전
@@ -338,10 +351,10 @@ export default function AdminWorkspace({
               <div className="stat-grid">
                 <Stat
                   label={"전체 회원"}
-                  value={money(data.members.length)}
+                  value={money(businessMembers.length)}
                   unit={"명"}
                   icon={<Users size={20} />}
-                  foot={`구매 회원 ${purchased}명 · 가입 대기 ${data.members.length - purchased}명`}
+                  foot={`구매 회원 ${purchased}명 · 가입 대기 ${businessMembers.length - purchased}명`}
                 />
                 <Stat
                   label={"누적 충전 입금액"}
@@ -507,7 +520,7 @@ export default function AdminWorkspace({
             </>
           )}
           {tab === "announcements" && (
-            <AdminAnnouncements demo={demo} members={data.members} />
+            <AdminAnnouncements demo={demo} members={businessMembers} />
           )}
           {tab === "sales" && (
             <SalesReport
@@ -768,7 +781,9 @@ export default function AdminWorkspace({
                   >
                     <option value="">충전할 회원을 선택하세요</option>
                     {data.members
-                      .filter((m) => m.status === "active")
+                      .filter(
+                        (m) => m.role === "member" && m.status === "active",
+                      )
                       .map((m) => (
                         <option key={m.id} value={m.id}>
                           {m.name} · {m.member_code}
@@ -904,10 +919,10 @@ export default function AdminWorkspace({
                 </div>
                 <select
                   aria-label="조직도 기준 회원"
-                  value={orgRoot}
+                  value={networkRoot}
                   onChange={(e) => setOrgRoot(e.target.value)}
                 >
-                  {data.members.map((m) => (
+                  {businessMembers.map((m) => (
                     <option value={m.id} key={m.id}>
                       {m.name} · {m.member_code}
                     </option>
@@ -915,9 +930,12 @@ export default function AdminWorkspace({
                 </select>
               </div>
               <div className="tree-canvas">
+                {!networkRoot && (
+                  <p className="empty">등록된 회원이 없습니다.</p>
+                )}
                 <TreeNode
-                  id={orgRoot}
-                  members={data.members}
+                  id={networkRoot}
+                  members={businessMembers}
                   mode={orgMode}
                   depth={0}
                 />
@@ -1150,7 +1168,7 @@ export default function AdminWorkspace({
                     센터 등급 회원 / 보너스 수령인
                     <select name="owner" required>
                       <option value="">회원 선택</option>
-                      {data.members.map((m) => (
+                      {businessMembers.map((m) => (
                         <option value={m.id} key={m.id}>
                           {m.name} · {m.member_code}
                         </option>
@@ -1466,7 +1484,7 @@ export default function AdminWorkspace({
                   <select name={key} defaultValue={edit[key] ?? ""}>
                     <option value="">미배정</option>
                     {data.members
-                      .filter((m) => m.id !== edit.id)
+                      .filter((m) => m.role === "member" && m.id !== edit.id)
                       .map((m) => (
                         <option value={m.id} key={m.id}>
                           {m.name} · {m.member_code}

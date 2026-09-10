@@ -16,7 +16,10 @@ async function session(admin = false) {
     .select("role,status")
     .eq("id", user.id)
     .single();
-  if (data?.status !== "active" || (admin && data.role !== "admin"))
+  if (
+    data?.status !== "active" ||
+    (admin ? data.role !== "admin" : data.role !== "member")
+  )
     throw new Error("접근 권한이 없습니다.");
   return { db, user };
 }

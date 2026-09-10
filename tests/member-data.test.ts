@@ -4,7 +4,7 @@ import { seedDemo } from "../src/lib/demo";
 import { memberSnapshot } from "../src/lib/member-data";
 test("member portal payload includes only own records, even for admin identity", () => {
   const data = seedDemo();
-  for (const id of ["demo-0", "demo-1"]) {
+  for (const id of ["demo-admin", "demo-1"]) {
     const result = memberSnapshot(data, id);
     assert.equal(result.member.id, id);
     assert.ok(result.purchases.every((p) => p.member_id === id));

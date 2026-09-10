@@ -140,7 +140,7 @@ test("announcements: permissions, recipient snapshot, read ownership, versions a
     await login(admin);
     const allId = crypto.randomUUID();
     await save(false, [], "all", allId);
-    assert.equal((await publish(1, allId)).rows[0].n, 3);
+    assert.equal((await publish(1, allId)).rows[0].n, 2);
     await db.exec("reset role");
     assert.equal(
       (await db.query("select * from public.push_deliveries")).rows.length,

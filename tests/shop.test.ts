@@ -16,10 +16,11 @@ test("PV order atomicity, retry, capped rewards, authorization and scoped trees"
       .filter((f) => f.endsWith(".sql"))
       .sort())
       await db.exec(await readFile(`supabase/migrations/${file}`, "utf8"));
-    const [admin, buyer, outsider, child] = Array.from({ length: 4 }, () =>
-      crypto.randomUUID(),
+    const [leader, buyer, outsider, child, admin] = Array.from(
+      { length: 5 },
+      () => crypto.randomUUID(),
     );
-    for (const id of [admin, buyer, outsider, child])
+    for (const id of [leader, buyer, outsider, child, admin])
       await db.query("insert into auth.users values($1,$2,$3)", [
         id,
         `${id}@example.com`,
@@ -33,21 +34,23 @@ test("PV order atomicity, retry, capped rewards, authorization and scoped trees"
           address: "서울 테스트 주소",
         }),
       ]);
-    await db.query(
-      "update public.members set role='admin',bonus_limit=20000 where id=$1",
-      [admin],
-    );
+    await db.query("update public.members set bonus_limit=20000 where id=$1", [
+      leader,
+    ]);
+    await db.query("update public.members set role='admin' where id=$1", [
+      admin,
+    ]);
     await db.query(
       "update public.members set referrer_id=$1,sponsor_id=$1,position='L' where id=$2",
-      [admin, buyer],
+      [leader, buyer],
     );
     await db.query(
       "update public.members set referrer_id=$1,sponsor_id=$2,position='R' where id=$3",
-      [buyer, admin, child],
+      [buyer, leader, child],
     );
     await db.query(
       "insert into public.centers(id,name,owner_id) values($1,'센터',$2)",
-      [outsider, admin],
+      [outsider, leader],
     );
     await db.query("update public.members set center_id=$1 where id=$2", [
       outsider,
@@ -101,13 +104,13 @@ test("PV order atomicity, retry, capped rewards, authorization and scoped trees"
     assert.equal((await org("sponsor", buyer)).total, 0);
     await org("referral", child);
     await assert.rejects(org("sponsor", child), /본인 산하/);
-    await assert.rejects(org("referral", admin), /본인 산하/);
+    await assert.rejects(org("referral", leader), /본인 산하/);
     await login(outsider);
     await assert.rejects(buy(), /사용된 요청/);
     await login(admin);
     const rewards = (
       await db.query<any>("select * from public.bonuses where member_id=$1", [
-        admin,
+        leader,
       ])
     ).rows;
     assert.equal(

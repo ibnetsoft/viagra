@@ -14,6 +14,9 @@ test("administrator preview: recharge, shipping, membership, persistence and mob
     fullPage: true,
   });
   await page.getByRole("button", { name: "수동 충전", exact: true }).click();
+  await page
+    .getByRole("combobox", { name: "충전할 회원" })
+    .selectOption("demo-0");
   const dialog = page.getByRole("dialog");
   await expect(
     dialog.getByText("충전 시 추가 없음 · 상품 구매 시 150만원"),
@@ -22,6 +25,10 @@ test("administrator preview: recharge, shipping, membership, persistence and mob
   await dialog.getByRole("checkbox").check();
   await dialog.getByRole("button", { name: "PV 충전 확정" }).click();
   await expect(dialog).not.toBeVisible();
+  await page
+    .locator("nav")
+    .getByRole("button", { name: "대시보드", exact: true })
+    .click();
   await expect(
     page.locator(".stat-value").filter({ hasText: "2,860,000" }),
   ).toBeVisible();

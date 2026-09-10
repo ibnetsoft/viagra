@@ -9,7 +9,7 @@ export default async function Page() {
       process.env.NODE_ENV !== "production" ||
       process.env.ENABLE_DEMO === "true"
     )
-      return <Workspace demo initialData={null} userId="demo-0" />;
+      return <Workspace demo initialData={null} userId="demo-admin" />;
     return (
       <main className="setup">
         <h1>활력 파트너스</h1>

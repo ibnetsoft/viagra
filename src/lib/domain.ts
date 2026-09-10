@@ -116,11 +116,16 @@ export function rank(
   members: Member[],
   centers: Center[] = [],
 ): string {
+  if (member.role === "admin") return "관리자";
   if (centers.some((center) => center.owner_id === member.id)) return "센터";
   if (member.grade) return member.grade;
   const agents = (id: string) =>
     members.filter(
-      (m) => m.referrer_id === id && m.bonus_limit > 0 && m.status === "active",
+      (m) =>
+        m.role === "member" &&
+        m.referrer_id === id &&
+        m.bonus_limit > 0 &&
+        m.status === "active",
     );
   if (agents(member.id).filter((m) => agents(m.id).length >= 5).length >= 3)
     return "본부장";

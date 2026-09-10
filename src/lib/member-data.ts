@@ -47,6 +47,12 @@ export function demoOrganization(
   root = me,
   offset = 0,
 ): OrganizationData {
+  data = { ...data, members: data.members.filter((m) => m.role === "member") };
+  if (
+    !data.members.some((m) => m.id === me) ||
+    !data.members.some((m) => m.id === root)
+  )
+    throw new Error("회원만 조직도를 조회할 수 있습니다.");
   const key = mode === "referral" ? "referrer_id" : "sponsor_id";
   const visited = new Set<string>();
   let ancestor: string | null = root;
