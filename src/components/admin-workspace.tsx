@@ -1416,6 +1416,7 @@ export default function AdminWorkspace({
                 setEdit(null);
             }}
           >
+            <p>로그인 아이디: <strong>{edit.username ?? edit.member_code.toLowerCase()}</strong></p>
             <div className="form-grid">
               <label>
                 이름

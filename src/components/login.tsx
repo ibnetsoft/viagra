@@ -57,7 +57,7 @@ export default function Login({
           <p className="muted">
             {signup
               ? "주소와 계좌 정보는 선택사항입니다."
-              : "이메일과 비밀번호로 로그인하세요."}
+              : "아이디와 비밀번호로 로그인하세요. 기존 이메일로도 로그인할 수 있습니다."}
           </p>
           <form
             onSubmit={async (e) => {
@@ -83,16 +83,27 @@ export default function Login({
               name="portal"
               value={admin ? "admin" : "member"}
             />
-            <label>
-              이메일
-              <input
-                name="email"
-                type="email"
-                placeholder="name@example.com"
-                required
-                autoComplete="email"
-              />
-            </label>
+            {signup ? (
+              <>
+                <label>
+                  아이디
+                  <input name="username" required minLength={4} maxLength={20}
+                    pattern="[A-Za-z][A-Za-z0-9_]{3,19}" autoComplete="username"
+                    autoCapitalize="none" spellCheck={false} placeholder="영문으로 시작, 4~20자" />
+                </label>
+                <p className="muted">영문·숫자·밑줄 사용 가능 · 대소문자 구분 없음</p>
+                <label>
+                  이메일 (가입 인증용)
+                  <input name="email" type="email" placeholder="name@example.com" required autoComplete="email" />
+                </label>
+              </>
+            ) : (
+              <label>
+                아이디 또는 이메일
+                <input name="identifier" type="text" placeholder="아이디 또는 이메일" required
+                  maxLength={254} autoComplete="username" autoCapitalize="none" spellCheck={false} />
+              </label>
+            )}
             <label>
               비밀번호
               <input

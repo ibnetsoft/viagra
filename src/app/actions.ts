@@ -5,6 +5,8 @@ import { configured, createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { usernameField } from "@/lib/username";
+import { resolveLoginEmail } from "@/lib/supabase/login-directory";
 import { bankFields } from "@/lib/bank-details";
 const memberFields = z.object({
   name: z.string().trim().min(1).max(80),
@@ -19,12 +21,13 @@ export async function authenticate(form: FormData) {
       error: "Supabase 연결 후 회원가입과 로그인을 사용할 수 있습니다.",
     };
   const client = await createClient();
-  const credentials = z
-    .object({ email: z.email(), password: z.string().min(8).max(128) })
-    .safeParse(Object.fromEntries(form));
-  if (!credentials.success)
-    return { error: "이메일과 비밀번호(8자 이상)를 확인하세요." };
+  const password = z.string().min(8).max(128).safeParse(form.get("password"));
+  if (!password.success) return { error: "비밀번호는 8자 이상 입력하세요." };
   if (form.get("mode") === "signup") {
+    const email = z.email().safeParse(String(form.get("email") ?? "").trim());
+    const username = usernameField.safeParse(form.get("username"));
+    if (!email.success) return { error: "이메일 주소를 확인하세요." };
+    if (!username.success) return { error: "아이디는 영문으로 시작하는 4~20자의 영문·숫자·밑줄로 입력하세요." };
     if (form.get("portal") === "admin")
       return {
         error: "관리자 계정은 기존 회원에게 권한을 지정하여 생성합니다.",
@@ -45,26 +48,40 @@ export async function authenticate(form: FormData) {
       return {
         error: "이름, 연락처, 우편번호, 주소를 확인하세요.",
       };
+    try {
+      if (await resolveLoginEmail(username.data)) return { error: "이미 사용 중인 아이디입니다." };
+    } catch { return { error: "아이디 확인 중 오류가 발생했습니다. 잠시 후 다시 시도하세요." }; }
     const { error } = await client.auth.signUp({
-      ...credentials.data,
+      email: email.data, password: password.data,
       options: {
-        data: { ...profile.data, ...(bank?.success ? bank.data : {}) },
+        data: { ...profile.data, username: username.data, ...(bank?.success ? bank.data : {}) },
       },
     });
     if (error)
       return {
         error:
-          "가입하지 못했습니다. 입력 정보 또는 잠시 후 재시도를 확인하세요.",
+          "가입하지 못했습니다. 아이디 중복 및 입력 정보를 확인한 뒤 다시 시도하세요.",
       };
     return {
       message:
         "가입 신청이 완료되었습니다. 이메일 인증 후 로그인하세요. 추천·후원 배치는 관리자가 첫 충전 전에 등록합니다.",
     };
   }
-  const { data, error } = await client.auth.signInWithPassword(
-    credentials.data,
-  );
-  if (error) return { error: "이메일 또는 비밀번호를 확인하세요." };
+  const identifier = String(form.get("identifier") ?? form.get("email") ?? "").trim();
+  let email = identifier;
+  if (!identifier.includes("@")) {
+    const username = usernameField.safeParse(identifier);
+    if (!username.success) return { error: "아이디 또는 비밀번호를 확인하세요." };
+    try {
+      const resolved = await resolveLoginEmail(username.data);
+      if (!resolved) return { error: "아이디 또는 비밀번호를 확인하세요." };
+      email = resolved;
+    }
+    catch { return { error: "로그인 연결을 확인하지 못했습니다. 잠시 후 다시 시도하세요." }; }
+  }
+  if (!z.email().safeParse(email).success) return { error: "아이디 또는 비밀번호를 확인하세요." };
+  const { data, error } = await client.auth.signInWithPassword({ email, password: password.data });
+  if (error) return { error: "아이디 또는 비밀번호를 확인하세요." };
   const { data: profile, error: profileError } = await client
     .from("members")
     .select("role,status")

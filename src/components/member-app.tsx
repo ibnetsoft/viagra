@@ -385,6 +385,10 @@ export default function MemberApp({
                 <h2>기본 정보</h2>
                 <dl className="member-details">
                   <div>
+                    <dt>아이디</dt>
+                    <dd>{member.username ?? member.member_code.toLowerCase()}</dd>
+                  </div>
+                  <div>
                     <dt>이메일</dt>
                     <dd>{member.email}</dd>
                   </div>
