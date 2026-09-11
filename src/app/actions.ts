@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { usernameField } from "@/lib/username";
-import { resolveLoginEmail } from "@/lib/supabase/login-directory";
+import { resolveLoginEmail, loginDirectory } from "@/lib/supabase/login-directory";
 import { bankFields } from "@/lib/bank-details";
 const memberFields = z.object({
   name: z.string().trim().min(1).max(80),
@@ -15,6 +15,14 @@ const memberFields = z.object({
   address: z.string().trim().max(200).default(""),
   address_detail: z.string().trim().max(200).default(""),
 });
+export async function signupCenters(): Promise<{ centers: { id: string; name: string }[]; error?: string }> {
+  if (!configured()) return { centers: [] };
+  try {
+    const { data, error } = await loginDirectory().from("centers").select("id,name").order("name");
+    if (error) throw error;
+    return { centers: data ?? [] };
+  } catch { return { centers: [], error: "센터 목록을 불러오지 못했습니다. 잠시 후 다시 시도하세요." }; }
+}
 export async function authenticate(form: FormData) {
   if (!configured())
     return {
@@ -51,20 +59,39 @@ export async function authenticate(form: FormData) {
     try {
       if (await resolveLoginEmail(username.data)) return { error: "이미 사용 중인 아이디입니다." };
     } catch { return { error: "아이디 확인 중 오류가 발생했습니다. 잠시 후 다시 시도하세요." }; }
+    const placement = z.object({
+      referrer_username: z.union([usernameField, z.literal("")]),
+      sponsor_username: z.union([usernameField, z.literal("")]),
+      sponsor_position: z.enum(["", "L", "R"]),
+      signup_center_id: z.union([z.uuid(), z.literal("")]),
+    }).safeParse({
+      referrer_username: String(form.get("referrer_username") ?? "").trim(),
+      sponsor_username: String(form.get("sponsor_username") ?? "").trim(),
+      sponsor_position: String(form.get("sponsor_position") ?? ""),
+      signup_center_id: String(form.get("signup_center_id") ?? ""),
+    });
+    if (!placement.success) return { error: "추천인·후원인 아이디와 센터 선택을 확인하세요." };
+    try {
+      const { error } = await loginDirectory().rpc("validate_signup_placement", {
+        p_referrer: placement.data.referrer_username, p_sponsor: placement.data.sponsor_username,
+        p_position: placement.data.sponsor_position, p_center: placement.data.signup_center_id || null,
+      });
+      if (error) return { error: error.code === "P0001" ? error.message : "추천·후원 배치를 확인하지 못했습니다. 다시 시도하세요." };
+    } catch { return { error: "가입 정보를 확인하지 못했습니다. 잠시 후 다시 시도하세요." }; }
     const { error } = await client.auth.signUp({
       email: email.data, password: password.data,
       options: {
-        data: { ...profile.data, username: username.data, ...(bank?.success ? bank.data : {}) },
+        data: { ...profile.data, ...placement.data, username: username.data, ...(bank?.success ? bank.data : {}) },
       },
     });
     if (error)
       return {
         error:
-          "가입하지 못했습니다. 아이디 중복 및 입력 정보를 확인한 뒤 다시 시도하세요.",
+          "가입하지 못했습니다. 아이디 중복, 후원 자리 및 입력 정보를 확인한 뒤 다시 시도하세요.",
       };
     return {
       message:
-        "가입 신청이 완료되었습니다. 이메일 인증 후 로그인하세요. 추천·후원 배치는 관리자가 첫 충전 전에 등록합니다.",
+        "가입 신청이 완료되었습니다. 이메일 인증 후 로그인하세요. 입력한 추천·후원·센터 정보가 저장되었습니다.",
     };
   }
   const identifier = String(form.get("identifier") ?? form.get("email") ?? "").trim();

@@ -1,9 +1,9 @@
 "use client";
 import { AdminThemeToggle } from "./admin-theme";
 import { MemberThemeToggle } from "./member-theme";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowUpRight, Leaf } from "lucide-react";
-import { authenticate } from "@/app/actions";
+import { authenticate, signupCenters } from "@/app/actions";
 import BankFields from "./bank-fields";
 export default function Login({
   connected,
@@ -15,6 +15,21 @@ export default function Login({
   const [signup, setSignup] = useState(false),
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState("");
+  const [centers, setCenters] = useState<{id: string; name: string}[]>([]);
+  const [centerError, setCenterError] = useState("");
+  const [centersLoading, setCentersLoading] = useState(false);
+  const [sponsor, setSponsor] = useState("");
+  useEffect(() => {
+    if (!signup) return;
+    let active = true;
+    setCentersLoading(true);
+    setCenterError("");
+    signupCenters().then(result => {
+      if (active) { setCenters(result.centers); setCenterError(result.error ?? ""); }
+    }).catch(() => { if (active) setCenterError("센터 목록을 불러오지 못했습니다."); })
+      .finally(() => { if (active) setCentersLoading(false); });
+    return () => { active = false; };
+  }, [signup]);
   return (
     <main className={`auth-layout ${admin ? "admin-auth" : "member-auth"}`}>
       <section className="auth-story">
@@ -170,6 +185,34 @@ export default function Login({
                     placeholder="동·호수 등"
                   />
                 </label>
+                <h3>추천·후원·센터 (선택)</h3>
+                <label>
+                  추천인 아이디
+                  <input name="referrer_username" placeholder="추천인의 로그인 아이디" maxLength={20}
+                    pattern="[A-Za-z][A-Za-z0-9_]{3,19}" autoCapitalize="none" spellCheck={false} autoComplete="off" />
+                </label>
+                <label>
+                  후원인 아이디
+                  <input name="sponsor_username" placeholder="후원인의 로그인 아이디" maxLength={20}
+                    pattern="[A-Za-z][A-Za-z0-9_]{3,19}" autoCapitalize="none" spellCheck={false} autoComplete="off"
+                    value={sponsor} onChange={e => setSponsor(e.target.value)} />
+                </label>
+                {sponsor.trim() && <label>
+                  후원 자리
+                  <select name="sponsor_position" required defaultValue="">
+                    <option value="" disabled>좌·우 자리를 선택하세요</option>
+                    <option value="L">좌측</option><option value="R">우측</option>
+                  </select>
+                </label>}
+                <label>
+                  센터
+                  <select name="signup_center_id" defaultValue="" disabled={centersLoading}>
+                    <option value="">{centersLoading ? "센터 목록 불러오는 중…" : "선택 안 함"}</option>
+                    {centers.map(center => <option key={center.id} value={center.id}>{center.name}</option>)}
+                  </select>
+                </label>
+                {centerError && <p className="notice" role="status">{centerError}</p>}
+                <p className="muted">추천인과 후원인은 다르게 입력할 수 있습니다. 비워 두면 가입 후 관리자가 지정할 수 있습니다.</p>
                 <h3>계좌 정보 (선택)</h3>
                 <BankFields required={false} />
               </>
