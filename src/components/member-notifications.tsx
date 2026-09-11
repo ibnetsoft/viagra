@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Bell } from "lucide-react";
 import {
   memberNotices,
+  unreadNoticeCount,
   readNotice,
   pushConfig,
   pushStatus,
@@ -55,6 +56,8 @@ export default function MemberNotifications({
         const all = demoItems(memberId);
         setUnread(all.filter((i) => !i.read_at).length);
         setItems(all.slice(current * 30, current * 30 + 30));
+      } else if (!inbox) {
+        setUnread(await unreadNoticeCount());
       } else {
         const result = await memberNotices(current);
         setItems(result.items as unknown as Item[]);

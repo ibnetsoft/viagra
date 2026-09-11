@@ -79,6 +79,16 @@ export async function memberNotices(page = 0) {
   if (error) throw new Error("알림을 불러오지 못했습니다.");
   return data as { items: unknown[]; unread: number };
 }
+export async function unreadNoticeCount() {
+  const { db, user } = await session();
+  const { count, error } = await db
+    .from("announcement_recipients")
+    .select("announcement_id", { count: "exact", head: true })
+    .eq("member_id", user.id)
+    .is("read_at", null);
+  if (error) throw new Error("알림 수를 불러오지 못했습니다.");
+  return count ?? 0;
+}
 export async function readNotice(id: string | null) {
   if (id !== null) z.uuid().parse(id);
   const { db } = await session();

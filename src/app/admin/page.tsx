@@ -83,17 +83,12 @@ export default async function Page() {
   const [members, purchases, bonuses, audits, centers, topups] = results.map(
     (r) => r.data ?? [],
   );
-  const { data: grade, error: gradeError } = await client.rpc("my_grade");
-  if (gradeError) throw new Error("회원 등급을 불러오지 못했습니다.");
-  const membersWithGrade = members.map((m) =>
-    m.id === user.id ? { ...m, grade } : m,
-  );
   return (
     <Workspace
       demo={false}
       initialData={
         {
-          members: membersWithGrade,
+          members,
           purchases: purchases.filter((p) => p.payment_method === "pv"),
           topups,
           bonuses,

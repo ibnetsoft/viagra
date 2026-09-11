@@ -152,7 +152,7 @@ export default function MemberApp({
                 <section>
                   <span>나의 구매</span>
                   <strong>
-                    {purchases.length}
+                    {data.purchaseCount ?? purchases.length}
                     <small>회</small>
                   </strong>
                 </section>

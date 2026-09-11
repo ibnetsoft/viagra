@@ -37,6 +37,7 @@ export default async function Page({
       );
     return (
       <MemberApp
+        key={section}
         demo
         initialData={memberSnapshot(seedDemo(), "demo-1")}
         section={section as MemberSection}
@@ -67,10 +68,9 @@ export default async function Page({
   async function ownRows(table: "purchases" | "bonuses") {
     const rows: Record<string, unknown>[] = [];
     for (let offset = 0; ; offset += 500) {
-      const { data, error } = await client
-        .from(table)
-        .select("*")
-        .eq("member_id", user!.id)
+      let query = client.from(table).select("*").eq("member_id", user!.id);
+      if (table === "purchases") query = query.eq("payment_method", "pv");
+      const { data, error } = await query
         .order("created_at", { ascending: false })
         .order("id")
         .range(offset, offset + 499);
@@ -79,28 +79,52 @@ export default async function Page({
       if (data.length < 500) return rows;
     }
   }
+  let purchaseCount: number | undefined;
+  async function homePurchases() {
+    const { data, count, error } = await client
+      .from("purchases")
+      .select("*", { count: "exact" })
+      .eq("member_id", user!.id)
+      .eq("payment_method", "pv")
+      .order("created_at", { ascending: false })
+      .order("id")
+      .limit(1);
+    if (error) throw new Error("구매 정보를 불러오지 못했습니다.");
+    purchaseCount = count ?? 0;
+    return data;
+  }
   const [purchases, bonuses, gradeResult, centerResult, productsResult] =
     await Promise.all([
-      ownRows("purchases"),
-      ownRows("bonuses"),
-      client.rpc("my_grade"),
-      member.center_id
+      section === "home"
+        ? homePurchases()
+        : section === "orders"
+          ? ownRows("purchases")
+          : Promise.resolve([]),
+      section === "bonuses" ? ownRows("bonuses") : Promise.resolve([]),
+      ["home", "profile"].includes(section)
+        ? client.rpc("my_grade")
+        : Promise.resolve({ data: null, error: null }),
+      section === "profile" && member.center_id
         ? client
             .from("centers")
             .select("name")
             .eq("id", member.center_id)
             .single()
         : Promise.resolve({ data: null, error: null }),
-      client.from("products").select("*").eq("active", true).order("name"),
+      section === "products"
+        ? client.from("products").select("*").eq("active", true).order("name")
+        : Promise.resolve({ data: [], error: null }),
     ]);
   if (gradeResult.error || centerResult.error || productsResult.error)
     throw new Error("회원 정보를 불러오지 못했습니다.");
   return (
     <MemberApp
+      key={section}
       demo={false}
       section={section as MemberSection}
       initialData={{
         products: productsResult.data ?? [],
+        purchaseCount,
         member: { ...member, grade: gradeResult.data } as Member,
         purchases: purchases.filter(
           (p) => p.payment_method === "pv",
