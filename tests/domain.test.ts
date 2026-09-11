@@ -38,3 +38,14 @@ test("center owner is displayed as center grade", () => {
   assert.equal(rank(data.members[0], data.members, data.centers), "센터");
   assert.equal(rank(data.members[1], data.members, data.centers), "에이전트");
 });
+
+import { bonusType, bonusLabel } from "../src/lib/domain";
+test("referral display uses original gross even when payout is capped", () => {
+  const first = { kind: "referral", gross: 90000, paid: 30000, expired: 60000 };
+  const second = { kind: "referral", gross: 30000, paid: 0, expired: 30000 };
+  assert.equal(bonusType(first), "referral1");
+  assert.equal(bonusLabel(first), "추천1");
+  assert.equal(bonusType(second), "referral2");
+  assert.equal(bonusLabel(second), "추천2");
+  assert.equal(bonusLabel({ kind: "triangle1", gross: 90000 }), "삼각 1");
+});

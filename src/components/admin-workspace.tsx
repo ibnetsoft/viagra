@@ -29,6 +29,8 @@ import {
   type Member,
   type Purchase,
   bonusNames,
+  bonusType,
+  bonusLabel,
   date,
   money,
   rank,
@@ -219,7 +221,7 @@ export default function AdminWorkspace({
     : "initial";
   const creditTerms = terms[creditKind];
   const allBonuses = data.bonuses.filter(
-    (b) => filter === "all" || b.kind === filter,
+    (b) => filter === "all" || bonusType(b) === filter,
   );
   const shipments = data.purchases.filter(
     (p) =>
@@ -505,7 +507,7 @@ export default function AdminWorkspace({
                         <ArrowDownLeft size={18} />
                       </span>
                       <div>
-                        <strong>{bonusNames[b.kind] ?? b.kind}</strong>
+                        <strong>{bonusLabel(b)}</strong>
                         <p>
                           {member(b.member_id)?.name} · {date(b.created_at)}
                         </p>
@@ -695,6 +697,8 @@ export default function AdminWorkspace({
                       <th>충전 PV</th>
                       <th>남은 보너스 한도</th>
                       <th>추천인</th>
+                      <th>후원인</th>
+                      <th>센터</th>
                       <th>관리</th>
                     </tr>
                   </thead>
@@ -716,6 +720,8 @@ export default function AdminWorkspace({
                         </td>
                         <td>{money(m.bonus_limit - m.bonus_paid)}원</td>
                         <td>{member(m.referrer_id)?.name ?? "미배정"}</td>
+                        <td>{member(m.sponsor_id)?.name ?? "미배정"}</td>
+                        <td>{data.centers.find((c) => c.id === m.center_id)?.name ?? "미배정"}</td>
                         <td>
                           <button
                             className="button compact member-service-button"
@@ -1015,7 +1021,7 @@ export default function AdminWorkspace({
                         <tr key={b.id}>
                           <td>{date(b.created_at)}</td>
                           <td>{member(b.member_id)?.name ?? "회원"}</td>
-                          <td>{bonusNames[b.kind]}</td>
+                          <td>{bonusLabel(b)}</td>
                           <td>{money(b.gross)}원</td>
                           <td className="amount-positive">{money(b.paid)}원</td>
                           <td>
@@ -1057,8 +1063,8 @@ export default function AdminWorkspace({
                       <dd>30만 PV 차감 · 한도 150만원 추가</dd>
                     </div>
                     <div>
-                      <dt>추천 보너스</dt>
-                      <dd>1대 30% · 2대 10% (최초 PV)</dd>
+                      <dt>추천1 / 추천2</dt>
+                      <dd>추천1 9만원 · 추천2 3만원 (최초 구매)</dd>
                     </div>
                     <div>
                       <dt>삼각 보너스</dt>

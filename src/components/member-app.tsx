@@ -16,7 +16,7 @@ import {
   UserRound,
   Wallet,
 } from "lucide-react";
-import { bonusNames, date, money } from "@/lib/domain";
+import { bonusLabel, date, money } from "@/lib/domain";
 import { type MemberData, memberSnapshot } from "@/lib/member-data";
 import { logout } from "@/app/actions";
 import MemberNotifications from "./member-notifications";
@@ -272,7 +272,7 @@ export default function MemberApp({
                   .map((b) => (
                     <div key={b.id} className="member-bonus-row">
                       <div>
-                        <strong>{bonusNames[b.kind] ?? b.kind}</strong>
+                        <strong>{bonusLabel(b)}</strong>
                         <p>
                           {date(b.created_at)} · 발생 {money(b.gross)}원
                         </p>

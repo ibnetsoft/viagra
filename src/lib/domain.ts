@@ -98,7 +98,8 @@ export const date = (s: string) =>
     timeZone: "Asia/Seoul",
   }).format(new Date(s));
 export const bonusNames: Record<string, string> = {
-  referral: "추천 보너스",
+  referral1: "추천1",
+  referral2: "추천2",
   triangle1: "삼각 1",
   triangle2: "삼각 2",
   triangle3: "삼각 3",
@@ -107,6 +108,16 @@ export const bonusNames: Record<string, string> = {
   team: "팀장 공동 보너스",
   head: "본부장 공동 보너스",
 };
+// Classify from the original amount, never the amount reduced by the payout cap.
+export function bonusType(bonus: Pick<Bonus, "kind" | "gross">): string {
+  if (bonus.kind !== "referral") return bonus.kind;
+  if (Number(bonus.gross) === 90000) return "referral1";
+  if (Number(bonus.gross) === 30000) return "referral2";
+  return "referral";
+}
+export function bonusLabel(bonus: Pick<Bonus, "kind" | "gross">): string {
+  return bonusNames[bonusType(bonus)] ?? (bonus.kind === "referral" ? "추천 보너스" : bonus.kind);
+}
 export function allocateBonus(gross: number, limit: number, paid: number) {
   if (![gross, limit, paid].every((n) => Number.isSafeInteger(n) && n >= 0))
     throw new Error("금액은 0 이상의 정수여야 합니다.");
