@@ -20,6 +20,14 @@ test("bank details optional at signup, preserve leading zero, private and checke
       postcode: "00000",
       address: "테스트 주소",
     };
+    // Optional address metadata must work through the real signup trigger.
+    for (const address of [{}, { postcode: "", address: "", address_detail: "" }, { address_detail: "101호" }, { postcode: "01234" }]) {
+      const id = crypto.randomUUID();
+      await db.query("insert into auth.users values($1,$2,$3)", [id, id + "@example.invalid", JSON.stringify({ name: info.name, phone: info.phone, ...address })]);
+      const { rows } = await db.query<any>("select postcode,address,address_detail,bank_name from public.members where id=$1", [id]);
+      assert.deepEqual(rows[0], { postcode: "", address: "", address_detail: "", ...address, bank_name: null });
+    }
+    await assert.rejects(db.query("insert into auth.users values($1,$2,$3)", [crypto.randomUUID(), "bad-postcode@example.invalid", JSON.stringify({ ...info, postcode: "123" })]), /members_postcode_check/);
     const noBank = crypto.randomUUID();
     await db.query("insert into auth.users values($1,$2,$3)", [
       noBank,

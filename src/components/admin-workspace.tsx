@@ -1437,26 +1437,24 @@ export default function AdminWorkspace({
               </label>
             </div>
             <label>
-              우편번호
+              우편번호 (선택)
               <input
                 name="postcode"
                 defaultValue={edit.postcode}
-                required
                 pattern="[0-9]{5}"
                 maxLength={5}
               />
             </label>
             <label>
-              기본 주소
+              기본 주소 (선택)
               <input
                 name="address"
                 defaultValue={edit.address}
-                required
                 maxLength={200}
               />
             </label>
             <label>
-              상세 주소
+              상세 주소 (선택)
               <input
                 name="address_detail"
                 defaultValue={edit.address_detail}

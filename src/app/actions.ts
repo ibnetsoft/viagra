@@ -9,9 +9,9 @@ import { bankFields } from "@/lib/bank-details";
 const memberFields = z.object({
   name: z.string().trim().min(1).max(80),
   phone: z.string().regex(/^[0-9+\- ]{9,20}$/),
-  postcode: z.string().regex(/^\d{5}$/),
-  address: z.string().trim().min(2).max(200),
-  address_detail: z.string().max(200),
+  postcode: z.string().trim().regex(/^(?:\d{5})?$/).default(""),
+  address: z.string().trim().max(200).default(""),
+  address_detail: z.string().trim().max(200).default(""),
 });
 export async function authenticate(form: FormData) {
   if (!configured())

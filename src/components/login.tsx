@@ -56,7 +56,7 @@ export default function Login({
           </h2>
           <p className="muted">
             {signup
-              ? "배송지를 입력해 주세요. 계좌 정보는 가입 후 등록해도 됩니다."
+              ? "주소와 계좌 정보는 선택사항입니다."
               : "이메일과 비밀번호로 로그인하세요."}
           </p>
           <form
@@ -130,10 +130,9 @@ export default function Login({
                   </label>
                 </div>
                 <label>
-                  우편번호
+                  우편번호 (선택)
                   <input
                     name="postcode"
-                    required
                     pattern="[0-9]{5}"
                     maxLength={5}
                     autoComplete="postal-code"
@@ -141,17 +140,16 @@ export default function Login({
                   />
                 </label>
                 <label>
-                  기본 주소
+                  기본 주소 (선택)
                   <input
                     name="address"
-                    required
                     maxLength={200}
                     autoComplete="address-line1"
                     placeholder="도로명 및 건물번호"
                   />
                 </label>
                 <label>
-                  상세 주소
+                  상세 주소 (선택)
                   <input
                     name="address_detail"
                     maxLength={200}
