@@ -77,6 +77,7 @@ export type Topup = {
   created_at: string;
 };
 export type AppData = {
+  triangleWaiting?: Record<string, { self: string[]; L: string[]; R: string[] }>;
   topups?: Topup[];
   members: Member[];
   purchases: Purchase[];

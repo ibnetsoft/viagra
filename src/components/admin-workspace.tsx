@@ -1056,7 +1056,7 @@ export default function AdminWorkspace({
                     </div>
                     <div>
                       <dt>삼각 보너스</dt>
-                      <dd>9만원 / 9만원 × 2 / 6만원 × 4</dd>
+                      <dd>매칭마다 9만원 / 9만원 × 2 / 6만원 × 4 · 본인·좌·우 구매 각 1회 사용, 미매칭 실적 이월</dd>
                     </div>
                     <div>
                       <dt>후원 롤업</dt>

@@ -159,6 +159,13 @@ export function demoCredit(
     });
     return data;
   }
+  if (!data.triangleWaiting) {
+    data.triangleWaiting = {};
+    for (const order of [...data.purchases].reverse()) {
+      if (order.payment_method === "pv") recordTriangle(data, order.member_id, order.id);
+    }
+    matchTriangles(data, false);
+  }
   const kind = data.purchases.some((p) => p.member_id === id)
     ? "repeat"
     : "initial";
@@ -195,25 +202,6 @@ export function demoCredit(
       award(data, parent, `${requestId}:referral`, "referral", t.pv * rate);
       parent = data.members.find((m) => m.id === parent)?.referrer_id ?? null;
     }
-    for (const root of data.members.filter((m) => m.bonus_limit > 0)) {
-      const children = data.members.filter(
-        (m) => m.sponsor_id === root.id && m.bonus_limit > 0,
-      );
-      if (children.length !== 2) continue;
-      let beneficiary: Member | undefined = root;
-      for (let depth = 1; depth <= 3 && beneficiary; depth++) {
-        award(
-          data,
-          beneficiary.id,
-          `triangle${depth}:${root.id}`,
-          `triangle${depth}`,
-          depth === 3 ? 60000 : 90000,
-        );
-        beneficiary = data.members.find(
-          (m) => m.id === beneficiary?.sponsor_id,
-        );
-      }
-    }
   } else {
     let parent = member.sponsor_id;
     for (let depth = 1; depth <= 13 && parent; depth++) {
@@ -221,6 +209,8 @@ export function demoCredit(
       parent = data.members.find((m) => m.id === parent)?.sponsor_id ?? null;
     }
   }
+  recordTriangle(data, id, requestId);
+  matchTriangles(data, true);
   const center = data.centers.find((c) => c.id === member.center_id);
   if (center)
     award(data, center.owner_id, `${requestId}:center`, "center", t.pv * 0.05);
@@ -232,4 +222,30 @@ export function demoCredit(
     created_at: new Date().toISOString(),
   });
   return data;
+}
+
+function recordTriangle(data: AppData, memberId: string, purchase: string) {
+  const member = data.members.find(m => m.id === memberId && m.role === "member");
+  if (!member) return;
+  const add = (root: string, slot: "self" | "L" | "R") => {
+    const waiting = data.triangleWaiting ??= {};
+    const queues = waiting[root] ??= { self: [], L: [], R: [] };
+    queues[slot].push(purchase);
+  };
+  add(member.id, "self");
+  if (member.sponsor_id && member.position) add(member.sponsor_id, member.position);
+}
+function matchTriangles(data: AppData, pay: boolean) {
+  for (const [root, queues] of Object.entries(data.triangleWaiting ?? {})) {
+    while (queues.self.length && queues.L.length && queues.R.length) {
+      const key = [queues.self.shift(), queues.L.shift(), queues.R.shift()].join(":");
+      if (!pay) continue;
+      let beneficiary = data.members.find(m => m.id === root);
+      for (let depth = 1; depth <= 3 && beneficiary; depth++) {
+        if (beneficiary.role === "member" && beneficiary.bonus_limit > 0)
+          award(data, beneficiary.id, `triangle${depth}:match:${root}:${key}`, `triangle${depth}`, depth === 3 ? 60000 : 90000);
+        beneficiary = data.members.find(m => m.id === beneficiary?.sponsor_id);
+      }
+    }
+  }
 }
