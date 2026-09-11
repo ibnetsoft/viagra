@@ -54,7 +54,7 @@ export default async function Page({
     .eq("id", user.id)
     .single();
   if (error || !member) throw new Error("회원 정보를 불러오지 못했습니다.");
-  if (member.role === "admin") redirect("/admin");
+  if (member.role === "admin") redirect("/login");
   if (member.status !== "active")
     return (
       <main className="setup">

@@ -35,7 +35,7 @@ export default async function Page() {
         <p>관리자에게 데이터베이스 설치 상태를 확인해 주세요.</p>
       </main>
     );
-  if (profile.role !== "admin") redirect("/app");
+  if (profile.role !== "admin") redirect("/admin/login");
   if (profile.status !== "active")
     return (
       <main className="setup">

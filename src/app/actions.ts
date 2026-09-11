@@ -65,18 +65,25 @@ export async function authenticate(form: FormData) {
     credentials.data,
   );
   if (error) return { error: "이메일 또는 비밀번호를 확인하세요." };
+  const { data: profile, error: profileError } = await client
+    .from("members")
+    .select("role,status")
+    .eq("id", data.user.id)
+    .single();
+  if (profileError || !profile)
+    return { error: "계정 정보를 확인하지 못했습니다. 다시 시도하세요." };
   if (form.get("portal") === "admin") {
-    const { data: profile } = await client
-      .from("members")
-      .select("role,status")
-      .eq("id", data.user.id)
-      .single();
     if (profile?.role !== "admin" || profile.status !== "active") {
       await client.auth.signOut();
       return { error: "관리자 권한이 있는 계정으로 로그인하세요." };
     }
     redirect("/admin");
   }
+  if (profile.role === "admin")
+    return {
+      error:
+        "회원 전용 로그인입니다. 회원 계정으로 로그인해 주세요. 관리자 계정은 /admin에서 이용할 수 있습니다.",
+    };
   redirect("/app");
 }
 export async function logout(portal: "admin" | "member" = "member") {
