@@ -1,4 +1,5 @@
 "use client";
+import { AdminThemeToggle } from "./admin-theme";
 import { MemberThemeToggle } from "./member-theme";
 import { useState } from "react";
 import { ArrowUpRight, Leaf } from "lucide-react";
@@ -41,6 +42,7 @@ export default function Login({
       </section>
       <section className="auth-form">
         <div className="auth-inner">
+          {admin && <div className="admin-login-theme"><AdminThemeToggle /></div>}
           {!admin && (
             <div className="member-login-theme">
               <MemberThemeToggle />

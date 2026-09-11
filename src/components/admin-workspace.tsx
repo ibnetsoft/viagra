@@ -1,4 +1,5 @@
 "use client";
+import { AdminThemeToggle } from "./admin-theme";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -141,7 +142,9 @@ export default function AdminWorkspace({
       return () => clearTimeout(timer);
     }
   }, [toast]);
-  const businessMembers = data.members.filter((m) => m.role === "member");
+  const businessMembers = data.members.filter((m) => m.role === "member")
+    .sort((a, b) => b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id));
+  const memberNumbers = new Map(businessMembers.map((m, index) => [m.id, businessMembers.length - index]));
   const networkRoot = businessMembers.some((m) => m.id === orgRoot)
     ? orgRoot
     : (businessMembers.find(
@@ -302,6 +305,7 @@ export default function AdminWorkspace({
             <strong>{tabs.find((t) => t.id === tab)?.label}</strong>
           </div>
           <div className="topbar-right">
+            <AdminThemeToggle />
             <span className="connection">
               <span className="status-dot" />
               {demo ? "샘플 데이터" : "서비스 연결됨"}
@@ -685,6 +689,7 @@ export default function AdminWorkspace({
                 <table>
                   <thead>
                     <tr>
+                      <th scope="col">번호</th>
                       <th>회원</th>
                       <th>등급 / 상태</th>
                       <th>충전 PV</th>
@@ -696,6 +701,7 @@ export default function AdminWorkspace({
                   <tbody>
                     {filtered.slice((page - 1) * 10, page * 10).map((m) => (
                       <tr key={m.id}>
+                        <td className="member-sequence">{memberNumbers.get(m.id)}</td>
                         <td>
                           <Person member={m} />
                         </td>
