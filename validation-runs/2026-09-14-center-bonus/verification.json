@@ -1,0 +1,26 @@
+{
+  "tables": [
+    [
+      "center_sales",
+      true
+    ],
+    [
+      "center_referral_unpaid",
+      true
+    ]
+  ],
+  "permissions": [
+    false,
+    false,
+    false,
+    true
+  ],
+  "policies": [
+    [
+      "center_referral_unpaid_admin",
+      "( SELECT private.is_admin() AS is_admin)"
+    ]
+  ],
+  "bonus_count": 0,
+  "migration": "20260914014558_center_bonus_split"
+}

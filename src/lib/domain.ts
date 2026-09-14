@@ -78,7 +78,30 @@ export type Topup = {
   created_at: string;
 };
 export type AppData = {
-  triangleWaiting?: Record<string, { self: string[]; L: string[]; R: string[] }>;
+  centerSales?: {
+    purchase_id: string;
+    center_id: string;
+    center_name: string;
+    owner_id: string;
+    referrer_id: string | null;
+    pv: number;
+    day: string;
+  }[];
+  centerClosedDays?: string[];
+  centerUnpaid?: {
+    id: string;
+    day: string;
+    center_name: string;
+    owner_id: string;
+    sales_pv: number;
+    amount: number;
+    reason: string;
+    created_at: string;
+  }[];
+  triangleWaiting?: Record<
+    string,
+    { self: string[]; L: string[]; R: string[] }
+  >;
   topups?: Topup[];
   members: Member[];
   purchases: Purchase[];
@@ -105,6 +128,7 @@ export const bonusNames: Record<string, string> = {
   triangle3: "삼각 3",
   rollup: "후원 롤업",
   center: "센터 보너스",
+  center_referral: "센터소개 보너스",
   team: "팀장 공동 보너스",
   head: "본부장 공동 보너스",
 };
@@ -116,7 +140,10 @@ export function bonusType(bonus: Pick<Bonus, "kind" | "gross">): string {
   return "referral";
 }
 export function bonusLabel(bonus: Pick<Bonus, "kind" | "gross">): string {
-  return bonusNames[bonusType(bonus)] ?? (bonus.kind === "referral" ? "추천 보너스" : bonus.kind);
+  return (
+    bonusNames[bonusType(bonus)] ??
+    (bonus.kind === "referral" ? "추천 보너스" : bonus.kind)
+  );
 }
 export function allocateBonus(gross: number, limit: number, paid: number) {
   if (![gross, limit, paid].every((n) => Number.isSafeInteger(n) && n >= 0))

@@ -100,10 +100,15 @@ function award(
   if (!member || member.role !== "member") return;
   const allocation = allocateBonus(
     gross,
-    member.status === "active" ? member.bonus_limit : 0,
+    member.status === "active"
+      ? kind === "center" || kind === "center_referral"
+        ? member.bonus_paid + gross
+        : member.bonus_limit
+      : 0,
     member.bonus_paid,
   );
-  member.bonus_paid += allocation.paid;
+  if (kind !== "center" && kind !== "center_referral")
+    member.bonus_paid += allocation.paid;
   data.bonuses.unshift({
     id: crypto.randomUUID(),
     member_id: id,
@@ -162,7 +167,8 @@ export function demoCredit(
   if (!data.triangleWaiting) {
     data.triangleWaiting = {};
     for (const order of [...data.purchases].reverse()) {
-      if (order.payment_method === "pv") recordTriangle(data, order.member_id, order.id);
+      if (order.payment_method === "pv")
+        recordTriangle(data, order.member_id, order.id);
     }
     matchTriangles(data, false);
   }
@@ -212,8 +218,23 @@ export function demoCredit(
   recordTriangle(data, id, requestId);
   matchTriangles(data, true);
   const center = data.centers.find((c) => c.id === member.center_id);
-  if (center)
-    award(data, center.owner_id, `${requestId}:center`, "center", t.pv * 0.05);
+  if (center) {
+    const owner = data.members.find(
+      (m) => m.id === center.owner_id && m.role === "member",
+    );
+    if (owner)
+      (data.centerSales ??= []).push({
+        purchase_id: requestId,
+        center_id: center.id,
+        center_name: center.name,
+        owner_id: owner.id,
+        referrer_id: owner.referrer_id,
+        pv: t.pv,
+        day: new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Asia/Seoul",
+        }).format(new Date()),
+      });
+  }
   data.audits.unshift({
     id: crypto.randomUUID(),
     action: product ? "PV 상품 구매" : "수동 충전",
@@ -225,27 +246,94 @@ export function demoCredit(
 }
 
 function recordTriangle(data: AppData, memberId: string, purchase: string) {
-  const member = data.members.find(m => m.id === memberId && m.role === "member");
+  const member = data.members.find(
+    (m) => m.id === memberId && m.role === "member",
+  );
   if (!member) return;
   const add = (root: string, slot: "self" | "L" | "R") => {
-    const waiting = data.triangleWaiting ??= {};
-    const queues = waiting[root] ??= { self: [], L: [], R: [] };
+    const waiting = (data.triangleWaiting ??= {});
+    const queues = (waiting[root] ??= { self: [], L: [], R: [] });
     queues[slot].push(purchase);
   };
   add(member.id, "self");
-  if (member.sponsor_id && member.position) add(member.sponsor_id, member.position);
+  if (member.sponsor_id && member.position)
+    add(member.sponsor_id, member.position);
 }
 function matchTriangles(data: AppData, pay: boolean) {
   for (const [root, queues] of Object.entries(data.triangleWaiting ?? {})) {
     while (queues.self.length && queues.L.length && queues.R.length) {
-      const key = [queues.self.shift(), queues.L.shift(), queues.R.shift()].join(":");
+      const key = [
+        queues.self.shift(),
+        queues.L.shift(),
+        queues.R.shift(),
+      ].join(":");
       if (!pay) continue;
-      let beneficiary = data.members.find(m => m.id === root);
+      let beneficiary = data.members.find((m) => m.id === root);
       for (let depth = 1; depth <= 3 && beneficiary; depth++) {
         if (beneficiary.role === "member" && beneficiary.bonus_limit > 0)
-          award(data, beneficiary.id, `triangle${depth}:match:${root}:${key}`, `triangle${depth}`, depth === 3 ? 60000 : 90000);
-        beneficiary = data.members.find(m => m.id === beneficiary?.sponsor_id);
+          award(
+            data,
+            beneficiary.id,
+            `triangle${depth}:match:${root}:${key}`,
+            `triangle${depth}`,
+            depth === 3 ? 60000 : 90000,
+          );
+        beneficiary = data.members.find(
+          (m) => m.id === beneficiary?.sponsor_id,
+        );
       }
     }
   }
+}
+export function demoCloseCenters(original: AppData, day: string): AppData {
+  const data = structuredClone(original);
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+  }).format(new Date());
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || day >= today)
+    throw new Error("마감된 날짜만 정산할 수 있습니다.");
+  if (data.centerClosedDays?.includes(day)) return data;
+  (data.centerClosedDays ??= []).push(day);
+  const sales = (data.centerSales ?? []).filter((s) => s.day === day);
+  const owners = new Map<string, typeof sales>();
+  for (const sale of sales) {
+    const key = `${sale.center_id}:${sale.owner_id}`;
+    owners.set(key, [...(owners.get(key) ?? []), sale]);
+  }
+  for (const [key, rows] of owners) {
+    const first = rows[0];
+    award(
+      data,
+      first.owner_id,
+      `center:${day}:${first.center_id}`,
+      "center",
+      Math.floor((rows.reduce((n, s) => n + s.pv, 0) * 3) / 100),
+    );
+    for (const ref of new Set(rows.map((s) => s.referrer_id))) {
+      const pv = rows
+        .filter((s) => s.referrer_id === ref)
+        .reduce((n, s) => n + s.pv, 0);
+      const amount = Math.floor((pv * 2) / 100);
+      if (ref)
+        award(
+          data,
+          ref,
+          `center-referral:${day}:${key}`,
+          "center_referral",
+          amount,
+        );
+      else
+        (data.centerUnpaid ??= []).unshift({
+          id: crypto.randomUUID(),
+          day,
+          center_name: first.center_name,
+          owner_id: first.owner_id,
+          sales_pv: pv,
+          amount,
+          reason: "센터장 추천인 없음",
+          created_at: new Date().toISOString(),
+        });
+    }
+  }
+  return data;
 }

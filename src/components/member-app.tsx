@@ -132,7 +132,10 @@ export default function MemberApp({
                   <Wallet size={20} />
                 </div>
                 <h2>
-                  {money(member.bonus_paid)}
+                  {money(
+                    data.totalPaid ??
+                      bonuses.reduce((sum, b) => sum + b.paid, 0),
+                  )}
                   <small>원</small>
                 </h2>
                 <p>지금까지 지급된 보너스</p>
@@ -177,7 +180,7 @@ export default function MemberApp({
                   <span style={{ width: `${percentage}%` }} />
                 </div>
                 <div className="member-limit-labels">
-                  <span>지급 {money(member.bonus_paid)}원</span>
+                  <span>한도 사용 {money(member.bonus_paid)}원</span>
                   <span>총 한도 {money(member.bonus_limit)}원</span>
                 </div>
                 <p>
@@ -237,10 +240,15 @@ export default function MemberApp({
                   <Wallet size={20} />
                 </div>
                 <h2>
-                  {money(member.bonus_paid)}
+                  {money(
+                    data.totalPaid ??
+                      bonuses.reduce((sum, b) => sum + b.paid, 0),
+                  )}
                   <small>원</small>
                 </h2>
-                <p>남은 한도 {money(remaining)}원</p>
+                <p>
+                  남은 한도 {money(remaining)}원 · 센터/센터소개는 한도 제외
+                </p>
               </section>
               <div className="member-filter">
                 <button
@@ -386,7 +394,9 @@ export default function MemberApp({
                 <dl className="member-details">
                   <div>
                     <dt>아이디</dt>
-                    <dd>{member.username ?? member.member_code.toLowerCase()}</dd>
+                    <dd>
+                      {member.username ?? member.member_code.toLowerCase()}
+                    </dd>
                   </div>
                   <div>
                     <dt>이메일</dt>

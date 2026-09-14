@@ -45,7 +45,13 @@ export default async function Page() {
       </main>
     );
   async function readAll(
-    table: "members" | "purchases" | "bonuses" | "centers" | "pv_topups",
+    table:
+      | "members"
+      | "purchases"
+      | "bonuses"
+      | "centers"
+      | "pv_topups"
+      | "center_referral_unpaid",
   ) {
     const rows: Record<string, unknown>[] = [];
     for (let offset = 0; ; offset += 500) {
@@ -71,6 +77,7 @@ export default async function Page() {
       .limit(100),
     readAll("centers"),
     readAll("pv_topups"),
+    readAll("center_referral_unpaid"),
   ]);
   if (results.some((r) => r.error))
     return (
@@ -80,9 +87,8 @@ export default async function Page() {
         <a href="/admin">다시 시도</a>
       </main>
     );
-  const [members, purchases, bonuses, audits, centers, topups] = results.map(
-    (r) => r.data ?? [],
-  );
+  const [members, purchases, bonuses, audits, centers, topups, centerUnpaid] =
+    results.map((r) => r.data ?? []);
   return (
     <Workspace
       demo={false}
@@ -91,6 +97,7 @@ export default async function Page() {
           members,
           purchases: purchases.filter((p) => p.payment_method === "pv"),
           topups,
+          centerUnpaid,
           bonuses,
           audits,
           centers,

@@ -119,7 +119,7 @@ test("PV order atomicity, retry, capped rewards, authorization and scoped trees"
     );
     assert.equal(
       rewards.reduce((n, r) => n + Number(r.expired), 0),
-      85000,
+      70000,
     );
     await assert.rejects(
       db.query("select public.credit_purchase($1,$2,'cash')", [buyer, request]),

@@ -93,29 +93,43 @@ export default async function Page({
     purchaseCount = count ?? 0;
     return data;
   }
-  const [purchases, bonuses, gradeResult, centerResult, productsResult] =
-    await Promise.all([
-      section === "home"
-        ? homePurchases()
-        : section === "orders"
-          ? ownRows("purchases")
-          : Promise.resolve([]),
-      section === "bonuses" ? ownRows("bonuses") : Promise.resolve([]),
-      ["home", "profile"].includes(section)
-        ? client.rpc("my_grade")
-        : Promise.resolve({ data: null, error: null }),
-      section === "profile" && member.center_id
-        ? client
-            .from("centers")
-            .select("name")
-            .eq("id", member.center_id)
-            .single()
-        : Promise.resolve({ data: null, error: null }),
-      section === "products"
-        ? client.from("products").select("*").eq("active", true).order("name")
-        : Promise.resolve({ data: [], error: null }),
-    ]);
-  if (gradeResult.error || centerResult.error || productsResult.error)
+  const [
+    purchases,
+    bonuses,
+    gradeResult,
+    centerResult,
+    productsResult,
+    totalResult,
+  ] = await Promise.all([
+    section === "home"
+      ? homePurchases()
+      : section === "orders"
+        ? ownRows("purchases")
+        : Promise.resolve([]),
+    section === "bonuses" ? ownRows("bonuses") : Promise.resolve([]),
+    ["home", "profile"].includes(section)
+      ? client.rpc("my_grade")
+      : Promise.resolve({ data: null, error: null }),
+    section === "profile" && member.center_id
+      ? client
+          .from("centers")
+          .select("name")
+          .eq("id", member.center_id)
+          .single()
+      : Promise.resolve({ data: null, error: null }),
+    section === "products"
+      ? client.from("products").select("*").eq("active", true).order("name")
+      : Promise.resolve({ data: [], error: null }),
+    section === "home"
+      ? client.rpc("my_bonus_total")
+      : Promise.resolve({ data: null, error: null }),
+  ]);
+  if (
+    totalResult.error ||
+    gradeResult.error ||
+    centerResult.error ||
+    productsResult.error
+  )
     throw new Error("회원 정보를 불러오지 못했습니다.");
   return (
     <MemberApp
@@ -125,6 +139,8 @@ export default async function Page({
       initialData={{
         products: productsResult.data ?? [],
         purchaseCount,
+        totalPaid:
+          totalResult.data === null ? undefined : Number(totalResult.data),
         member: { ...member, grade: gradeResult.data } as Member,
         purchases: purchases.filter(
           (p) => p.payment_method === "pv",

@@ -36,7 +36,7 @@ import {
   rank,
   terms,
 } from "@/lib/domain";
-import { demoCredit, seedDemo } from "@/lib/demo";
+import { demoCredit, demoCloseCenters, seedDemo } from "@/lib/demo";
 import BankFields from "./bank-fields";
 import AdminAnnouncements from "./admin-announcements";
 import SalesReport from "./sales-report";
@@ -144,9 +144,15 @@ export default function AdminWorkspace({
       return () => clearTimeout(timer);
     }
   }, [toast]);
-  const businessMembers = data.members.filter((m) => m.role === "member")
-    .sort((a, b) => b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id));
-  const memberNumbers = new Map(businessMembers.map((m, index) => [m.id, businessMembers.length - index]));
+  const businessMembers = data.members
+    .filter((m) => m.role === "member")
+    .sort(
+      (a, b) =>
+        b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id),
+    );
+  const memberNumbers = new Map(
+    businessMembers.map((m, index) => [m.id, businessMembers.length - index]),
+  );
   const networkRoot = businessMembers.some((m) => m.id === orgRoot)
     ? orgRoot
     : (businessMembers.find(
@@ -221,7 +227,9 @@ export default function AdminWorkspace({
     : "initial";
   const creditTerms = terms[creditKind];
   const allBonuses = data.bonuses.filter(
-    (b) => filter === "all" || bonusType(b) === filter,
+    (b) =>
+      (filter === "all" || bonusType(b) === filter) &&
+      (!search || b.member_id === search),
   );
   const shipments = data.purchases.filter(
     (p) =>
@@ -705,7 +713,9 @@ export default function AdminWorkspace({
                   <tbody>
                     {filtered.slice((page - 1) * 10, page * 10).map((m) => (
                       <tr key={m.id}>
-                        <td className="member-sequence">{memberNumbers.get(m.id)}</td>
+                        <td className="member-sequence">
+                          {memberNumbers.get(m.id)}
+                        </td>
                         <td>
                           <Person member={m} />
                         </td>
@@ -721,7 +731,10 @@ export default function AdminWorkspace({
                         <td>{money(m.bonus_limit - m.bonus_paid)}원</td>
                         <td>{member(m.referrer_id)?.name ?? "미배정"}</td>
                         <td>{member(m.sponsor_id)?.name ?? "미배정"}</td>
-                        <td>{data.centers.find((c) => c.id === m.center_id)?.name ?? "미배정"}</td>
+                        <td>
+                          {data.centers.find((c) => c.id === m.center_id)
+                            ?.name ?? "미배정"}
+                        </td>
                         <td>
                           <button
                             className="button compact member-service-button"
@@ -975,7 +988,7 @@ export default function AdminWorkspace({
                   value={money(paid)}
                   unit="원"
                   icon={<Wallet size={20} />}
-                  foot="보너스 한도 내 반영"
+                  foot="센터·센터소개는 한도 차감 없이 지급"
                 />
                 <Stat
                   label="소멸액"
@@ -985,9 +998,67 @@ export default function AdminWorkspace({
                   foot="재구매해도 소급 지급하지 않습니다"
                 />
               </div>
+              <section className="panel padded">
+                <h2>센터장추천미지급</h2>
+                <p>
+                  누적{" "}
+                  {money(
+                    (data.centerUnpaid ?? []).reduce(
+                      (sum, row) => sum + row.amount,
+                      0,
+                    ),
+                  )}
+                  원 · 센터장 추천인이 없어 지급하지 않은 2%입니다. 실제
+                  지급액·소멸액에 포함되지 않습니다.
+                </p>
+                <div className="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>매출일</th>
+                        <th>센터</th>
+                        <th>센터장</th>
+                        <th>매출 PV</th>
+                        <th>미지급액</th>
+                        <th>사유</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(data.centerUnpaid ?? []).map((row) => (
+                        <tr key={row.id}>
+                          <td>{row.day}</td>
+                          <td>{row.center_name}</td>
+                          <td>{member(row.owner_id)?.name ?? "센터장"}</td>
+                          <td>{money(row.sales_pv)} PV</td>
+                          <td>{money(row.amount)}원</td>
+                          <td>{row.reason}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {!data.centerUnpaid?.length && (
+                  <Empty text="센터장추천미지급 내역이 없습니다." />
+                )}
+              </section>
               <section className="panel">
                 <div className="table-toolbar">
                   <h2>보너스 원장</h2>
+                  <select
+                    aria-label="보너스 회원"
+                    value={search}
+                    onChange={(e) => {
+                      setSearch(e.target.value);
+                      setPage(1);
+                    }}
+                  >
+                    <option value="">전체 회원</option>
+                    {businessMembers.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name} · {m.member_code}
+                      </option>
+                    ))}
+                  </select>
                   <select
                     aria-label="보너스 종류"
                     value={filter}
@@ -1068,7 +1139,10 @@ export default function AdminWorkspace({
                     </div>
                     <div>
                       <dt>삼각 보너스</dt>
-                      <dd>매칭마다 9만원 / 9만원 × 2 / 6만원 × 4 · 본인·좌·우 구매 각 1회 사용, 미매칭 실적 이월</dd>
+                      <dd>
+                        매칭마다 9만원 / 9만원 × 2 / 6만원 × 4 · 본인·좌·우 구매
+                        각 1회 사용, 미매칭 실적 이월
+                      </dd>
                     </div>
                     <div>
                       <dt>후원 롤업</dt>
@@ -1076,7 +1150,14 @@ export default function AdminWorkspace({
                     </div>
                     <div>
                       <dt>센터 등급</dt>
-                      <dd>소속 회원 구매 PV의 5%</dd>
+                      <dd>당일 소속 회원 구매 PV의 3% · 한도 제외</dd>
+                    </div>
+                    <div>
+                      <dt>센터소개 보너스</dt>
+                      <dd>
+                        센터장의 직접 추천인에게 당일 센터 매출 PV의 2% · 한도
+                        제외. 추천인이 없으면 센터장추천미지급 누적
+                      </dd>
                     </div>
                     <div>
                       <dt>한도 초과</dt>
@@ -1089,18 +1170,20 @@ export default function AdminWorkspace({
                   </p>
                 </section>
                 <section className="panel padded">
-                  <h2>직급 보너스 일일 정산</h2>
+                  <h2>직급·센터 보너스 일일 정산</h2>
                   <p className="muted">
-                    재구매 PV의 20%는 팀장·본부장, 10%는 본부장에게 균등
-                    배분합니다. 한국 시간 기준 마감된 날짜만 처리할 수 있습니다.
+                    센터 매출 PV의 3%는 센터장, 2%는 센터장의 직접 추천인에게
+                    지급합니다. 재구매 PV의 20%는 팀장·본부장, 10%는 본부장에게
+                    균등 배분합니다. 한국 시간 기준 마감된 날짜만 처리할 수
+                    있습니다.
                   </p>
                   <form
                     onSubmit={async (e) => {
                       e.preventDefault();
                       const f = new FormData(e.currentTarget);
                       if (demo) {
-                        setToast(
-                          "일일 직급 정산은 실제 데이터베이스 연결 후 사용합니다.",
+                        await perform("close", { day: f.get("day") }, () =>
+                          demoCloseCenters(data, String(f.get("day"))),
                         );
                         return;
                       }
@@ -1428,7 +1511,10 @@ export default function AdminWorkspace({
                 setEdit(null);
             }}
           >
-            <p>로그인 아이디: <strong>{edit.username ?? edit.member_code.toLowerCase()}</strong></p>
+            <p>
+              로그인 아이디:{" "}
+              <strong>{edit.username ?? edit.member_code.toLowerCase()}</strong>
+            </p>
             <div className="form-grid">
               <label>
                 이름

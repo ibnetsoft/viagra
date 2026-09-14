@@ -1,5 +1,6 @@
 import type { AppData, Member, Purchase, Bonus, Product } from "./domain";
 export type MemberData = {
+  totalPaid?: number;
   products?: Product[];
   purchaseCount?: number;
   member: Member;
