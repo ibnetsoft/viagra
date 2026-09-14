@@ -1784,3 +1784,10 @@ fieldset:disabled {
 .member-header {
   gap: 12px;
 }
+
+.center-owner-search { flex: 1; min-width: 240px; }
+.center-owner-search > label { display: block; margin-bottom: 8px; }
+.center-owner-search > input { width: 100%; }
+.center-owner-results { display: grid; gap: 6px; margin-top: 8px; max-height: 240px; overflow-y: auto; }
+.center-owner-results .button { justify-content: space-between; text-align: left; white-space: normal; }
+.center-owner-results small { margin-left: 12px; }

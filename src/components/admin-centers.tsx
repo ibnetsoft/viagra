@@ -18,7 +18,24 @@ export default function AdminCenters({
   const [name, setName] = useState("");
   const [owner, setOwner] = useState("");
   const [query, setQuery] = useState("");
+  const [ownerQuery, setOwnerQuery] = useState("");
   const members = data.members.filter((m) => m.role === "member");
+  const selectedOwner = members.find(
+    (m) => m.id === owner && m.status === "active",
+  );
+  const ownerMatches = ownerQuery.trim()
+    ? members.filter(
+        (m) =>
+          m.status === "active" &&
+          `${m.name} ${m.username ?? ""} ${m.member_code}`
+            .toLocaleLowerCase()
+            .includes(ownerQuery.trim().toLocaleLowerCase()),
+      )
+    : [];
+  const introducedCenters = (id: string) =>
+    data.centers.filter((c) =>
+      members.some((m) => m.id === c.owner_id && m.referrer_id === id),
+    );
   const center = data.centers.find((c) => c.id === selected) ?? data.centers[0];
   const leader = members.find((m) => m.id === center?.owner_id);
   const referrer = members.find((m) => m.id === leader?.referrer_id);
@@ -51,10 +68,12 @@ export default function AdminCenters({
           className="inline-form"
           onSubmit={async (e) => {
             e.preventDefault();
+            if (!selectedOwner) return;
             if (await onSave(editing, name.trim(), owner)) {
               setEditing(null);
               setName("");
               setOwner("");
+              setOwnerQuery("");
             }
           }}
         >
@@ -68,24 +87,54 @@ export default function AdminCenters({
               placeholder="예: 서울센터"
             />
           </label>
-          <label>
-            센터장
-            <select
-              required
-              value={owner}
-              onChange={(e) => setOwner(e.target.value)}
-            >
-              <option value="">회원 선택</option>
-              {members
-                .filter((m) => m.status === "active")
-                .map((m) => (
-                  <option key={m.id} value={m.id}>
+          <div className="center-owner-search">
+            <label htmlFor="center-owner-query">센터장 검색</label>
+            <input
+              id="center-owner-query"
+              value={ownerQuery}
+              autoComplete="off"
+              placeholder="회원명 또는 아이디 입력"
+              onChange={(e) => {
+                setOwnerQuery(e.target.value);
+                setOwner("");
+              }}
+            />
+            {selectedOwner ? (
+              <p className="notice" role="status">
+                선택된 센터장: <strong>{selectedOwner.name}</strong> ·{" "}
+                {selectedOwner.username ?? selectedOwner.member_code}
+              </p>
+            ) : ownerQuery.trim() ? (
+              <div
+                className="center-owner-results"
+                aria-label="센터장 검색 결과"
+              >
+                {ownerMatches.slice(0, 20).map((m) => (
+                  <button
+                    className="button"
+                    type="button"
+                    key={m.id}
+                    onClick={() => {
+                      setOwner(m.id);
+                      setOwnerQuery(m.name);
+                    }}
+                  >
                     {m.name} · {m.username ?? m.member_code}
-                  </option>
+                    <small>{m.member_code}</small>
+                  </button>
                 ))}
-            </select>
-          </label>
-          <button className="button primary" disabled={busy}>
+                {!ownerMatches.length && (
+                  <p role="status">일치하는 정상 회원이 없습니다.</p>
+                )}
+                {ownerMatches.length > 20 && (
+                  <p>상위 20명 표시 · 검색어를 더 입력해 주세요.</p>
+                )}
+              </div>
+            ) : (
+              <p className="muted small">검색 결과에서 회원을 선택하세요.</p>
+            )}
+          </div>
+          <button className="button primary" disabled={busy || !selectedOwner}>
             {editing ? "센터 정보 저장" : "센터 추가"}
           </button>
           {editing && (
@@ -96,6 +145,7 @@ export default function AdminCenters({
                 setEditing(null);
                 setName("");
                 setOwner("");
+                setOwnerQuery("");
               }}
             >
               취소
@@ -118,6 +168,7 @@ export default function AdminCenters({
                 <th>센터명</th>
                 <th>센터장</th>
                 <th>센터장 추천인</th>
+                <th>직접 소개한 센터 / 센터장</th>
                 <th>소속 회원</th>
                 <th>관리</th>
               </tr>
@@ -145,6 +196,31 @@ export default function AdminCenters({
                         : "없음 · 2% 미지급 누적"}
                     </td>
                     <td>
+                      {introducedCenters(c.owner_id).length
+                        ? introducedCenters(c.owner_id).map((child) => (
+                            <div key={child.id}>
+                              <button
+                                type="button"
+                                className="button"
+                                onClick={() => {
+                                  setSelected(child.id);
+                                  setQuery("");
+                                }}
+                              >
+                                {child.name}
+                              </button>
+                              <small className="table-sub">
+                                {findName(child.owner_id)} ·{" "}
+                                {members.find((m) => m.id === child.owner_id)
+                                  ?.username ??
+                                  members.find((m) => m.id === child.owner_id)
+                                    ?.member_code}
+                              </small>
+                            </div>
+                          ))
+                        : "없음"}
+                    </td>
+                    <td>
                       {members.filter((m) => m.center_id === c.id).length}명
                     </td>
                     <td>
@@ -154,6 +230,7 @@ export default function AdminCenters({
                           setEditing(c.id);
                           setName(c.name);
                           setOwner(c.owner_id);
+                          setOwnerQuery(findName(c.owner_id));
                         }}
                       >
                         센터 수정
@@ -178,6 +255,10 @@ export default function AdminCenters({
             <p>
               센터장 {leader?.name ?? "미지정"} · 센터소개 수령인{" "}
               {referrer?.name ?? "없음 (센터장추천미지급 누적)"}
+            </p>
+            <p className="muted small">
+              직접 소개한 센터는 이 센터장이 직접 추천한 회원이 센터장으로
+              지정된 센터입니다. 현재 추천 관계를 기준으로 표시합니다.
             </p>
             <dl className="rules">
               <div>
