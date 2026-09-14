@@ -8,6 +8,8 @@ import { redirect } from "next/navigation";
 import { usernameField } from "@/lib/username";
 import { resolveLoginEmail, loginDirectory } from "@/lib/supabase/login-directory";
 import { bankFields } from "@/lib/bank-details";
+const authEmailForUsername = (username: string) =>
+  `${username}@viagra-iota.vercel.app`;
 const memberFields = z.object({
   name: z.string().trim().min(1).max(80),
   phone: z.string().regex(/^[0-9+\- ]{9,20}$/),
@@ -79,13 +81,14 @@ export async function authenticate(form: FormData) {
       if (error) return { error: error.code === "P0001" ? error.message : "추천·후원 배치를 확인하지 못했습니다. 다시 시도하세요." };
     } catch { return { error: "가입 정보를 확인하지 못했습니다. 잠시 후 다시 시도하세요." }; }
     const { error } = await loginDirectory().auth.admin.createUser({
-      email: email.data,
+      email: authEmailForUsername(username.data),
       password: password.data,
       email_confirm: true,
       user_metadata: {
         ...profile.data,
         ...placement.data,
         username: username.data,
+        signup_email: email.data,
         ...(bank?.success ? bank.data : {}),
       },
     });
@@ -93,7 +96,7 @@ export async function authenticate(form: FormData) {
       return {
         error:
           error.code === "email_exists" || error.message.includes("already")
-            ? "이미 사용 중인 이메일입니다."
+            ? "이미 사용 중인 아이디입니다."
             : "가입하지 못했습니다. 아이디 중복, 추천인·센터 및 입력 정보를 확인한 뒤 다시 시도하세요.",
       };
     return {

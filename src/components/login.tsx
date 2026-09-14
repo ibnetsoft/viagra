@@ -74,7 +74,7 @@ export default function Login({
           <p className="muted">
             {signup
               ? "주소와 계좌 정보는 선택사항입니다."
-              : "아이디와 비밀번호로 로그인하세요. 기존 이메일로도 로그인할 수 있습니다."}
+              : "아이디와 비밀번호로 로그인하세요."}
           </p>
           <form
             onSubmit={async (e) => {
@@ -111,14 +111,15 @@ export default function Login({
                 </label>
                 <p className="muted">영문·숫자·밑줄 사용 가능 · 대소문자 구분 없음</p>
                 <label>
-                  이메일 (가입 인증용)
+                  이메일
                   <input name="email" type="email" placeholder="name@example.com" required autoComplete="email" />
                 </label>
+                <p className="muted">같은 이메일로 여러 회원을 등록할 수 있습니다.</p>
               </>
             ) : (
               <label>
-                아이디 또는 이메일
-                <input name="identifier" type="text" placeholder="아이디 또는 이메일" required
+                아이디
+                <input name="identifier" type="text" placeholder="아이디" required
                   maxLength={254} autoComplete="username" autoCapitalize="none" spellCheck={false} />
               </label>
             )}
