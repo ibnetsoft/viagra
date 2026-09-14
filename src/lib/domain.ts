@@ -28,6 +28,7 @@ export type Product = {
   name: string;
   description: string;
   pv_price: number;
+  repeat_pv_price?: number;
   active: boolean;
 };
 export type Purchase = {

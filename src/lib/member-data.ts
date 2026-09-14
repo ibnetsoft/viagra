@@ -27,6 +27,7 @@ export const demoProducts: Product[] = [
     name: "활력단 15개",
     description: "활력단 15개 구성 · 등록된 배송지로 배송됩니다.",
     pv_price: 300000,
+    repeat_pv_price: 200000,
     active: true,
   },
 ];

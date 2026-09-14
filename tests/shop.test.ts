@@ -125,9 +125,9 @@ test("PV order atomicity, retry, capped rewards, authorization and scoped trees"
       db.query("select public.credit_purchase($1,$2,'cash')", [buyer, request]),
       /사용된 요청/,
     );
-    // Repeated PV purchase uses purchase PV (300k), without crediting spendable PV.
+    // A repeat order must succeed with exactly 200k and debit only 200k.
     await db.exec("reset role");
-    await db.query("update public.members set pv=300000 where id=$1", [buyer]);
+    await db.query("update public.members set pv=200000 where id=$1", [buyer]);
     await login(buyer);
     const attempts = await Promise.allSettled([
       buy(crypto.randomUUID()),
@@ -165,7 +165,7 @@ test("demo shop spends PV and own organization excludes unrelated members", () =
     request,
     demoProducts[0],
   );
-  assert.equal(updated.members[1].pv, 0);
+  assert.equal(updated.members[1].pv, 100000);
   assert.equal(updated.members[1].bonus_limit, 3000000);
   assert.equal(
     demoCredit(updated, "demo-1", "PV 구매", request, demoProducts[0]).purchases

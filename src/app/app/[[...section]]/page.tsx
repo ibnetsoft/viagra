@@ -101,7 +101,7 @@ export default async function Page({
     productsResult,
     totalResult,
   ] = await Promise.all([
-    section === "home"
+    ["home", "products"].includes(section)
       ? homePurchases()
       : section === "orders"
         ? ownRows("purchases")

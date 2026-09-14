@@ -1168,7 +1168,7 @@ export default function AdminWorkspace({
                     </div>
                     <div>
                       <dt>PV 상품 구매</dt>
-                      <dd>30만 PV 차감 · 한도 150만원 추가</dd>
+                      <dd>최초 30만 / 재구매 20만 PV 차감 · 한도 150만원 추가</dd>
                     </div>
                     <div>
                       <dt>추천1 / 추천2</dt>

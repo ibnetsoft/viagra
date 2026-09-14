@@ -25,6 +25,9 @@ export default function MemberShop({
     request = useRef(""),
     inFlight = useRef(false);
   const router = useRouter();
+  const isRepeat = (data.purchaseCount ?? data.purchases.length) > 0;
+  const price = (product: Product) =>
+    isRepeat ? (product.repeat_pv_price ?? product.pv_price) : product.pv_price;
   async function purchase() {
     if (!selected || inFlight.current) return;
     inFlight.current = true;
@@ -92,12 +95,17 @@ export default function MemberShop({
           </div>
           <h2>{product.name}</h2>
           <p>{product.description}</p>
+          <p>
+            {isRepeat ? "재구매 가격" : "최초 구매 가격"} · 최초{" "}
+            {money(product.pv_price)} PV / 재구매{" "}
+            {money(product.repeat_pv_price ?? product.pv_price)} PV
+          </p>
           <strong className="member-product-price">
-            {money(product.pv_price)} <small>PV</small>
+            {money(price(product))} <small>PV</small>
           </strong>
           <button
             className="member-primary"
-            disabled={data.member.pv < product.pv_price}
+            disabled={data.member.pv < price(product)}
             onClick={() => {
               setSelected(product);
               request.current = crypto.randomUUID();
@@ -108,10 +116,10 @@ export default function MemberShop({
           >
             상품 선택 · PV로 구매
           </button>
-          {data.member.pv < product.pv_price && (
+          {data.member.pv < price(product) && (
             <p className="member-explanation">
-              {money(product.pv_price - data.member.pv)} PV가 부족해요.
-              관리자에게 충전을 요청해 주세요.
+              {money(price(product) - data.member.pv)} PV가 부족해요. 관리자에게
+              충전을 요청해 주세요.
             </p>
           )}
         </section>
@@ -147,12 +155,12 @@ export default function MemberShop({
             <dl className="member-details">
               <div>
                 <dt>사용 PV</dt>
-                <dd>{money(selected.pv_price)} PV</dd>
+                <dd>{money(price(selected))} PV</dd>
               </div>
               <div>
                 <dt>구매 후 잔액</dt>
                 <dd>
-                  {money(Math.max(0, data.member.pv - selected.pv_price))} PV
+                  {money(Math.max(0, data.member.pv - price(selected)))} PV
                 </dd>
               </div>
               <div>
@@ -181,7 +189,7 @@ export default function MemberShop({
             >
               {busy
                 ? "구매 처리 중…"
-                : `${money(selected.pv_price)} PV 결제 확정`}
+                : `${money(price(selected))} PV 결제 확정`}
             </button>
           </>
         )}

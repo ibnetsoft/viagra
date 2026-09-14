@@ -176,7 +176,14 @@ export function demoCredit(
     ? "repeat"
     : "initial";
   const t = product
-    ? { cash: 0, pv: product.pv_price, cap: 1500000 }
+    ? {
+        cash: 0,
+        pv:
+          kind === "repeat"
+            ? (product.repeat_pv_price ?? product.pv_price)
+            : product.pv_price,
+        cap: 1500000,
+      }
     : terms[kind];
   if (product && (!product.active || member.pv < t.pv))
     throw new Error("보유 PV가 부족합니다.");

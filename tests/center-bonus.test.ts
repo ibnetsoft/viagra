@@ -86,16 +86,16 @@ test("daily center split: initial/repeat, snapshot, cap exemption, unpaid and pe
     assert.deepEqual(
       rows.map((r) => [r.kind, Number(r.paid), Number(r.expired)]),
       [
-        ["center", 27000, 0],
-        ["center_referral", 12000, 0],
+        ["center", 21000, 0],
+        ["center_referral", 10000, 0],
       ],
     );
     const unpaid = (
       await db.query<any>("select * from public.center_referral_unpaid")
     ).rows;
     assert.equal(unpaid.length, 1);
-    assert.equal(Number(unpaid[0].amount), 6000);
-    assert.equal(Number(unpaid[0].sales_pv), 300000);
+    assert.equal(Number(unpaid[0].amount), 4000);
+    assert.equal(Number(unpaid[0].sales_pv), 200000);
     for (const id of [owner, ref])
       assert.equal(
         Number(
@@ -141,7 +141,7 @@ test("daily center split: initial/repeat, snapshot, cap exemption, unpaid and pe
       1,
     );
     const stats=(await db.query<any>("select public.admin_center_stats() stats")).rows[0].stats;
-    assert.equal(Number(stats[0].sales_pv),900000);
+    assert.equal(Number(stats[0].sales_pv),700000);
     await assert.rejects(db.query("select public.update_center($1,'테스트',$2)",[center,admin]),/정상 회원/);
     await db.query("select public.update_center($1,'수정센터',$2)",[center,buyer]);
     assert.equal((await db.query<any>('select name from public.centers where id=$1',[center])).rows[0].name,'수정센터');
