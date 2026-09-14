@@ -2,7 +2,7 @@
 import { AdminThemeToggle } from "./admin-theme";
 import { MemberThemeToggle } from "./member-theme";
 import { useEffect, useState } from "react";
-import { ArrowUpRight, Leaf } from "lucide-react";
+import { ArrowUpRight, Check, Leaf } from "lucide-react";
 import { authenticate, signupCenters } from "@/app/actions";
 import BankFields from "./bank-fields";
 export default function Login({
@@ -14,7 +14,8 @@ export default function Login({
 }) {
   const [signup, setSignup] = useState(false),
     [busy, setBusy] = useState(false),
-    [message, setMessage] = useState("");
+    [message, setMessage] = useState(""),
+    [success, setSuccess] = useState(false);
   const [centers, setCenters] = useState<{id: string; name: string}[]>([]);
   const [centerError, setCenterError] = useState("");
   const [centersLoading, setCentersLoading] = useState(false);
@@ -83,6 +84,7 @@ export default function Login({
               const form = new FormData(e.currentTarget);
               try {
                 const r = await authenticate(form);
+                setSuccess(Boolean(r.message));
                 setMessage(r.error ?? r.message ?? "");
               } finally {
                 setBusy(false);
@@ -203,7 +205,17 @@ export default function Login({
                 <BankFields required={false} />
               </>
             )}
-            {message && (
+            {success && message ? (
+              <div className="signup-success" role="status" aria-live="polite">
+                <span className="signup-success-icon">
+                  <Check size={22} strokeWidth={3} />
+                </span>
+                <div>
+                  <strong>회원가입 완료</strong>
+                  <p>{message}</p>
+                </div>
+              </div>
+            ) : message && (
               <p className="notice" role="status">
                 {message}
               </p>
@@ -227,6 +239,7 @@ export default function Login({
               onClick={() => {
                 setSignup(!signup);
                 setMessage("");
+                setSuccess(false);
               }}
             >
               {signup ? "이미 회원이신가요? 로그인" : "처음이신가요? 회원가입"}

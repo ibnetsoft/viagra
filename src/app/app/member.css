@@ -937,6 +937,14 @@
   border-color: var(--m-border, #dce4d7);
   color: var(--m-text, #203c31);
 }
+.member-theme .auth-form .signup-success {
+  background: var(--m-soft, #f2f6f1);
+  border-color: var(--m-border, #dce4d7);
+  color: var(--m-text, #203c31);
+}
+.member-theme .auth-form .signup-success p {
+  color: var(--m-muted, #74836a);
+}
 .member-theme .demo-link {
   color: var(--m-muted, #71907b);
 }
