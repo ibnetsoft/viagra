@@ -1,9 +1,9 @@
 "use client";
 import { AdminThemeToggle } from "./admin-theme";
 import { MemberThemeToggle } from "./member-theme";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { ArrowUpRight, Leaf } from "lucide-react";
-import { authenticate, signupCenters, previewSignupPlacement } from "@/app/actions";
+import { authenticate, signupCenters } from "@/app/actions";
 import BankFields from "./bank-fields";
 export default function Login({
   connected,
@@ -18,22 +18,6 @@ export default function Login({
   const [centers, setCenters] = useState<{id: string; name: string}[]>([]);
   const [centerError, setCenterError] = useState("");
   const [centersLoading, setCentersLoading] = useState(false);
-  const [sponsor, setSponsor] = useState("");
-  const confirmation = useRef<HTMLDialogElement>(null);
-  const pendingSignup = useRef<FormData | null>(null);
-  const [preview, setPreview] = useState<{referrer:string;sponsor:string;position:string;center:string} | null>(null);
-  const [confirmed, setConfirmed] = useState(false);
-  function cancelConfirmation() { confirmation.current?.close(); pendingSignup.current = null; setPreview(null); setConfirmed(false); }
-  async function completeSignup() {
-    if (busy || !confirmed || !pendingSignup.current) return;
-    setBusy(true);
-    try {
-      const result = await authenticate(pendingSignup.current);
-      cancelConfirmation();
-      setMessage(result.error ?? result.message ?? "");
-    } catch { cancelConfirmation(); setMessage("가입 결과를 확인하지 못했습니다. 잠시 후 다시 시도하세요."); }
-    finally { setBusy(false); }
-  }
   useEffect(() => {
     if (!signup) return;
     let active = true;
@@ -98,18 +82,8 @@ export default function Login({
               setMessage("");
               const form = new FormData(e.currentTarget);
               try {
-                if (signup) {
-                  const placement = new FormData();
-                  for (const key of ["referrer_username","sponsor_username","sponsor_position","signup_center_id"]) placement.set(key,String(form.get(key) ?? ""));
-                  const r = await previewSignupPlacement(placement);
-                  if (r.error || !r.preview) setMessage(r.error ?? "배치 정보를 확인하지 못했습니다.");
-                  else { pendingSignup.current = form; setPreview(r.preview); setConfirmed(false); confirmation.current?.showModal(); }
-                } else {
-                  const r = await authenticate(form);
-                  setMessage(r.error ?? r.message ?? "");
-                }
-              } catch {
-                setMessage("연결을 확인한 뒤 다시 시도하세요.");
+                const r = await authenticate(form);
+                setMessage(r.error ?? r.message ?? "");
               } finally {
                 setBusy(false);
               }
@@ -210,25 +184,12 @@ export default function Login({
                     placeholder="동·호수 등"
                   />
                 </label>
-                <h3>추천·후원·센터 (선택)</h3>
+                <h3>추천인·센터 (선택)</h3>
                 <label>
                   추천인 아이디
                   <input name="referrer_username" placeholder="추천인의 로그인 아이디" maxLength={20}
                     pattern="[A-Za-z][A-Za-z0-9_]{3,19}" autoCapitalize="none" spellCheck={false} autoComplete="off" />
                 </label>
-                <label>
-                  후원인 아이디
-                  <input name="sponsor_username" placeholder="후원인의 로그인 아이디" maxLength={20}
-                    pattern="[A-Za-z][A-Za-z0-9_]{3,19}" autoCapitalize="none" spellCheck={false} autoComplete="off"
-                    value={sponsor} onChange={e => setSponsor(e.target.value)} />
-                </label>
-                {sponsor.trim() && <label>
-                  후원 자리
-                  <select name="sponsor_position" required defaultValue="">
-                    <option value="" disabled>좌·우 자리를 선택하세요</option>
-                    <option value="L">좌측</option><option value="R">우측</option>
-                  </select>
-                </label>}
                 <label>
                   센터
                   <select name="signup_center_id" defaultValue="" disabled={centersLoading}>
@@ -237,7 +198,7 @@ export default function Login({
                   </select>
                 </label>
                 {centerError && <p className="notice" role="status">{centerError}</p>}
-                <p className="muted">추천인과 후원인은 다르게 입력할 수 있습니다. 비워 두면 가입 후 관리자가 지정할 수 있습니다.</p>
+                <p className="muted">후원 자리 배치는 가입 후 추천인이 조직도에서 지정합니다. 추천인을 비워 두면 관리자에게 연결을 요청해 주세요.</p>
                 <h3>계좌 정보 (선택)</h3>
                 <BankFields required={false} />
               </>
@@ -256,27 +217,10 @@ export default function Login({
               className="button primary wide"
               disabled={busy || !connected}
             >
-              {busy ? "처리 중…" : signup ? "배치 확인 후 가입" : "로그인"}
+              {busy ? "처리 중…" : signup ? "가입하기" : "로그인"}
               <ArrowUpRight size={18} />
             </button>
           </form>
-          <dialog ref={confirmation} className="signup-confirmation" aria-labelledby="signup-confirm-title"
-            onCancel={e => { if (busy) e.preventDefault(); else cancelConfirmation(); }}>
-            <h2 id="signup-confirm-title">추천·후원 배치 최종 확인</h2>
-            <p>아래 회원과 좌우 자리가 맞는지 확인해 주세요.</p>
-            {preview && <dl className="rules">
-              <div><dt>추천인</dt><dd>{preview.referrer}</dd></div>
-              <div><dt>후원인</dt><dd>{preview.sponsor}</dd></div>
-              <div><dt>후원인의 자리</dt><dd>{preview.position}</dd></div>
-              <div><dt>소속 센터</dt><dd>{preview.center}</dd></div>
-            </dl>}
-            <p className="muted">미지정 항목은 가입 후 관리자에게 배정을 요청할 수 있습니다. 가입 후 배치 변경은 관리자만 가능합니다. 자리는 가입 완료 시 확정됩니다.</p>
-            <label><input type="checkbox" checked={confirmed} disabled={busy} onChange={e=>setConfirmed(e.target.checked)} /> 위 추천인·후원인·좌우 자리·센터를 확인했습니다.</label>
-            <div className="signup-confirm-actions">
-              <button type="button" className="button" disabled={busy} onClick={cancelConfirmation}>돌아가서 수정</button>
-              <button type="button" className="button primary" disabled={busy || !confirmed} onClick={()=>void completeSignup()}>{busy ? "가입 처리 중…" : "확인하고 가입하기"}</button>
-            </div>
-          </dialog>
           {!admin && (
             <button
               className="text-button"

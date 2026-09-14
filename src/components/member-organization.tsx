@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { ChevronRight, Network, RotateCcw } from "lucide-react";
-import { loadOrganization } from "@/app/actions";
+import { loadOrganization, loadUnplacedMembers, placeReferredMember } from "@/app/actions";
 import {
   demoOrganization,
   type OrganizationData,
@@ -22,7 +22,36 @@ export default function MemberOrganization({
   const [data, setData] = useState<OrganizationData | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [pending, setPending] = useState<{id:string;name:string;username?:string;member_code:string}[]>([]);
+  const [chosen, setChosen] = useState("");
+  const [placement, setPlacement] = useState<{memberId:string;memberName:string;sponsorId:string;sponsorName:string;position:"L"|"R"}|null>(null);
+  const [saving,setSaving] = useState(false);
+  const [revision,setRevision] = useState(0);
+  const [notice,setNotice] = useState("");
+  const dialog = useRef<HTMLDialogElement>(null);
   const root = path.at(-1)?.id ?? memberId;
+  async function confirmPlacement() {
+    if (!placement || saving) return;
+    setSaving(true); setError("");
+    try {
+      if (demo) {
+        const saved=localStorage.getItem("vital-partners-demo-v2"); const next=saved?JSON.parse(saved):seedDemo();
+        demoOrganization(next,memberId,"sponsor",placement.sponsorId);
+        const target=next.members.find((m: any)=>m.id===placement.memberId && m.referrer_id===memberId && !m.sponsor_id);
+        if (!target || target.status!=="active" || target.id===placement.sponsorId) throw new Error("배치할 회원을 다시 확인하세요.");
+        let ancestor=placement.sponsorId;
+        while(ancestor) { if(ancestor===target.id) throw new Error("순환 배치할 수 없습니다."); ancestor=next.members.find((m:any)=>m.id===ancestor)?.sponsor_id; }
+        if(next.members.some((m:any)=>m.sponsor_id===placement.sponsorId && m.position===placement.position)) throw new Error("이미 사용 중인 자리입니다.");
+        target.sponsor_id=placement.sponsorId; target.position=placement.position;
+        localStorage.setItem("vital-partners-demo-v2",JSON.stringify(next));
+      } else {
+        const result=await placeReferredMember(placement.memberId,placement.sponsorId,placement.position);
+        if(result.error) throw new Error(result.error);
+      }
+      setNotice("회원 배치가 완료되었습니다."); setChosen("");
+    } catch(e) { setNotice(e instanceof Error?e.message:"배치하지 못했습니다."); }
+    finally { dialog.current?.close();setPlacement(null);setSaving(false);setRevision(v=>v+1); }
+  }
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -44,7 +73,10 @@ export default function MemberOrganization({
           if (response.error) throw new Error(response.error);
           result = response.data as OrganizationData;
         }
-        if (!cancelled) setData(result);
+        const waiting = demo
+          ? (JSON.parse(localStorage.getItem("vital-partners-demo-v2") ?? "null") ?? seedDemo()).members.filter((m: any)=>m.role==="member" && m.status==="active" && m.referrer_id===memberId && !m.sponsor_id)
+          : await loadUnplacedMembers().then(r=>{if(r.error)throw new Error(r.error);return r.data;});
+        if (!cancelled) { setData(result);setPending(waiting); }
       } catch (e) {
         if (!cancelled) {
           setData(null);
@@ -60,7 +92,7 @@ export default function MemberOrganization({
     return () => {
       cancelled = true;
     };
-  }, [demo, memberId, mode, root, offset]);
+  }, [demo, memberId, mode, root, offset, revision]);
   return (
     <>
       <div className="member-page-title">
@@ -84,6 +116,15 @@ export default function MemberOrganization({
           </button>
         ))}
       </div>
+      {mode === "sponsor" && <section className="member-card">
+        <h2>내가 추천한 미배치 회원 · {pending.length}명</h2>
+        <label>배치할 회원<select aria-label="배치할 회원" value={chosen} disabled={loading || saving} onChange={e=>setChosen(e.target.value)}>
+          <option value="">회원 선택</option>{pending.map(m=><option key={m.id} value={m.id}>{m.name} · {m.username ?? m.member_code}</option>)}
+        </select></label>
+        <p className="member-explanation">회원을 선택한 뒤, 내 후원 조직도에서 원하는 빈 좌·우 자리를 누르세요. 하위 회원을 눌러 더 아래의 자리도 선택할 수 있습니다.</p>
+        {!pending.length && !loading && <p>현재 직접 추천한 미배치 회원이 없습니다.</p>}
+      </section>}
+      {notice && <p role="status">{notice}</p>}
       <div className="member-org-path">
         <button
           onClick={() => {
@@ -138,7 +179,10 @@ export default function MemberOrganization({
                         {child ? (
                           card(child)
                         ) : (
-                          <div className="member-org-vacant">미배치</div>
+                          <button className="member-org-vacant" type="button" disabled={!chosen || saving || loading}
+                            onClick={()=>{const m=pending.find(m=>m.id===chosen);if(!m)return;setPlacement({memberId:m.id,memberName:`${m.name} (${m.username ?? m.member_code})`,sponsorId:data.root.id,sponsorName:`${data.root.name} (${data.root.member_code})`,position});dialog.current?.showModal();}}>
+                            {position === "L" ? "좌측" : "우측"} 빈 자리 · 배치하기
+                          </button>
                         )}
                       </div>
                     );
@@ -175,10 +219,14 @@ export default function MemberOrganization({
           </section>
         )
       )}
-      <p className="member-explanation">
-        추천 관계와 후원 배치는 각각 관리돼요. 본인 산하만 조회할 수 있으며 배치
-        변경은 관리자에게 요청해 주세요.
-      </p>
+      <p className="member-explanation">직접 추천한 미배치 회원만 내 후원 산하에 배치할 수 있습니다. 확정 후 이동은 관리자에게 요청하세요. 배치 전 구매 실적은 새 후원인에게 소급 반영되지 않습니다.</p>
+      <dialog ref={dialog} className="signup-confirmation" aria-labelledby="placement-title" onCancel={e=>{if(saving)e.preventDefault();else setPlacement(null);}}>
+        <h2 id="placement-title">후원 배치 최종 확인</h2>
+        <dl className="rules"><div><dt>배치할 회원</dt><dd>{placement?.memberName}</dd></div><div><dt>후원인</dt><dd>{placement?.sponsorName}</dd></div><div><dt>자리</dt><dd>{placement?.position==="L"?"좌측":"우측"}</dd></div></dl>
+        <p>확정 후에는 관리자만 변경할 수 있습니다. 이 자리에 배치하시겠습니까?</p>
+        <div className="signup-confirm-actions"><button type="button" className="button" disabled={saving} onClick={()=>{dialog.current?.close();setPlacement(null);}}>취소</button>
+        <button type="button" className="button primary" disabled={saving} onClick={()=>void confirmPlacement()}>{saving?"배치 중…":"확인하고 배치"}</button></div>
+      </dialog>
     </>
   );
   function card(node: OrganizationNode) {
