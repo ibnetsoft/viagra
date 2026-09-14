@@ -702,6 +702,8 @@ export default function AdminWorkspace({
                     <tr>
                       <th scope="col">번호</th>
                       <th>회원</th>
+                      <th>이름</th>
+                      <th>전화번호</th>
                       <th>등급 / 상태</th>
                       <th>충전 PV</th>
                       <th>남은 보너스 한도</th>
@@ -720,6 +722,8 @@ export default function AdminWorkspace({
                         <td>
                           <Person member={m} />
                         </td>
+                        <td>{m.name}</td>
+                        <td>{m.phone || "미입력"}</td>
                         <td>
                           {rank(m, data.members, data.centers)}
                           <small className="table-sub">
