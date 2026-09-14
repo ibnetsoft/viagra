@@ -23,6 +23,28 @@ export async function signupCenters(): Promise<{ centers: { id: string; name: st
     return { centers: data ?? [] };
   } catch { return { centers: [], error: "센터 목록을 불러오지 못했습니다. 잠시 후 다시 시도하세요." }; }
 }
+export async function previewSignupPlacement(form: FormData): Promise<{ error?: string; preview?: { referrer: string; sponsor: string; position: string; center: string } }> {
+  const values = z.object({ referrer: z.union([usernameField,z.literal("")]), sponsor: z.union([usernameField,z.literal("")]), position: z.enum(["","L","R"]), center: z.union([z.uuid(),z.literal("")]) }).safeParse({
+    referrer: String(form.get("referrer_username") ?? "").trim(), sponsor: String(form.get("sponsor_username") ?? "").trim(),
+    position: String(form.get("sponsor_position") ?? ""), center: String(form.get("signup_center_id") ?? "") });
+  if (!values.success) return { error: "추천인·후원인 아이디와 좌우 자리, 센터를 확인하세요." };
+  try {
+    const directory = loginDirectory(), v = values.data;
+    const { data: placement, error } = await directory.rpc("validate_signup_placement", { p_referrer: v.referrer, p_sponsor: v.sponsor, p_position: v.position, p_center: v.center || null });
+    if (error) return { error: error.code === "P0001" ? error.message : "배치 정보를 확인하지 못했습니다. 다시 시도하세요." };
+    const person = async (id: string | null) => {
+      if (!id) return "미지정";
+      const { data, error } = await directory.from("members").select("name,username").eq("id",id).eq("role","member").eq("status","active").single();
+      if (error || !data) throw new Error("배치 정보가 변경되었습니다. 다시 확인해 주세요.");
+      return `${data.name} (${data.username})`;
+    };
+    const [referrer,sponsor] = await Promise.all([person(placement.referrer_id),person(placement.sponsor_id)]);
+    let center = "미지정";
+    if (v.center) { const result = await directory.from("centers").select("name").eq("id",v.center).single(); if (result.error || !result.data) throw new Error("센터 정보를 다시 확인하세요."); center = result.data.name; }
+    return { preview: { referrer, sponsor, position: v.position === "L" ? "좌측" : v.position === "R" ? "우측" : "미배치", center } };
+  } catch { return { error: "배치 정보를 확인하지 못했습니다. 입력 내용을 확인하고 다시 시도하세요." }; }
+}
+
 export async function authenticate(form: FormData) {
   if (!configured())
     return {
