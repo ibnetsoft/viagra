@@ -117,7 +117,15 @@ test("daily center split: initial/repeat, snapshot, cap exemption, unpaid and pe
         .length,
       0,
     );
-    assert.equal(Number((await db.query<any>("select public.my_bonus_total() total")).rows[0].total), 0);
+    assert.equal(
+      Number(
+        (await db.query<any>("select public.my_bonus_total() total")).rows[0]
+          .total,
+      ),
+      0,
+    );
+    await assert.rejects(db.query("select public.admin_center_stats()"), /관리자/);
+    await assert.rejects(db.query("select public.update_center($1,'거부',$2)",[center,buyer]), /관리자/);
     await assert.rejects(
       db.query("select private.settle_centers(current_date-1)"),
       /permission denied/,
@@ -132,6 +140,14 @@ test("daily center split: initial/repeat, snapshot, cap exemption, unpaid and pe
         .length,
       1,
     );
+    const stats=(await db.query<any>("select public.admin_center_stats() stats")).rows[0].stats;
+    assert.equal(Number(stats[0].sales_pv),900000);
+    await assert.rejects(db.query("select public.update_center($1,'테스트',$2)",[center,admin]),/정상 회원/);
+    await db.query("select public.update_center($1,'수정센터',$2)",[center,buyer]);
+    assert.equal((await db.query<any>('select name from public.centers where id=$1',[center])).rows[0].name,'수정센터');
+    await db.exec('reset role');
+    assert.equal((await db.query<any>('select distinct owner_id from private.center_sales')).rows[0].owner_id,owner);
+    await db.exec('set role authenticated');
     await assert.rejects(
       db.query("insert into public.center_referral_unpaid default values"),
       /permission denied/,

@@ -78,6 +78,7 @@ export type Topup = {
   created_at: string;
 };
 export type AppData = {
+  centerStats?: { center_id: string; sales_pv: number; today_pv: number }[];
   centerSales?: {
     purchase_id: string;
     center_id: string;
@@ -89,6 +90,7 @@ export type AppData = {
   }[];
   centerClosedDays?: string[];
   centerUnpaid?: {
+    center_id?: string;
     id: string;
     day: string;
     center_name: string;

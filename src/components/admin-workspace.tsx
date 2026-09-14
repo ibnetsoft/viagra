@@ -40,11 +40,13 @@ import { demoCredit, demoCloseCenters, seedDemo } from "@/lib/demo";
 import BankFields from "./bank-fields";
 import AdminAnnouncements from "./admin-announcements";
 import SalesReport from "./sales-report";
+import AdminCenters from "./admin-centers";
 
 type Tab =
   | "overview"
   | "sales"
   | "members"
+  | "centers"
   | "credit"
   | "shipping"
   | "organization"
@@ -56,6 +58,7 @@ const tabs = [
   { id: "overview", label: "대시보드", icon: LayoutDashboard },
   { id: "sales", label: "매출 관리", icon: CreditCard },
   { id: "members", label: "회원 관리", icon: Users },
+  { id: "centers", label: "센터 관리", icon: Users },
   { id: "credit", label: "PV 충전", icon: Wallet },
   { id: "shipping", label: "배송 관리", icon: Truck },
   { id: "organization", label: "조직도", icon: GitBranch },
@@ -76,6 +79,7 @@ const titles: Record<Tab, [string, string]> = {
     "오늘의 회원 활동과 처리할 업무를 확인하세요.",
   ],
   members: ["회원 관리", "회원 정보와 추천·후원 관계를 관리하세요."],
+  centers: ["센터 관리", "센터장과 소속 회원, 매출과 보너스를 관리하세요."],
   credit: ["PV 충전", "입금을 확인하고 회원의 보유 PV를 충전하세요."],
   shipping: ["배송 관리", "구매 당시의 배송지와 상품 발송 상태를 확인하세요."],
   organization: [
@@ -86,10 +90,7 @@ const titles: Record<Tab, [string, string]> = {
     "보너스 내역",
     "발생액부터 지급액과 소멸액까지 투명하게 확인하세요.",
   ],
-  settings: [
-    "운영 설정",
-    "보상 기준, 센터, 일일 정산과 작업 기록을 관리하세요.",
-  ],
+  settings: ["운영 설정", "보상 기준, 일일 정산과 작업 기록을 관리하세요."],
 };
 const demoStorage = "vital-partners-demo-v2";
 
@@ -1115,6 +1116,42 @@ export default function AdminWorkspace({
               </section>
             </>
           )}
+          {tab === "centers" && (
+            <AdminCenters
+              data={data}
+              busy={busy}
+              onEditMember={setEdit}
+              onSave={async (id, name, owner) =>
+                perform(
+                  id ? "update-center" : "center",
+                  { id, name, owner },
+                  () => {
+                    const next = structuredClone(data);
+                    if (
+                      next.centers.some((c) => c.name === name && c.id !== id)
+                    )
+                      throw new Error("이미 존재하는 센터명입니다.");
+                    if (id) {
+                      const c = next.centers.find((c) => c.id === id);
+                      if (!c) throw new Error("센터를 찾을 수 없습니다.");
+                      c.name = name;
+                      c.owner_id = owner;
+                    } else
+                      next.centers.push({
+                        id: crypto.randomUUID(),
+                        name,
+                        owner_id: owner,
+                      });
+                    return demoAudit(
+                      next,
+                      id ? "센터 수정" : "센터 생성",
+                      name,
+                    );
+                  },
+                )
+              }
+            />
+          )}
           {tab === "settings" && (
             <>
               <div className="overview-grid">
@@ -1212,69 +1249,6 @@ export default function AdminWorkspace({
                   </p>
                 </section>
               </div>
-              <section className="panel padded">
-                <h2>센터 관리</h2>
-                <p className="muted small">
-                  센터 수령 회원은 센터 등급으로 표시됩니다. 소속은 회원 정보
-                  수정에서 배정하며, 30만 PV 상품 구매마다 15,000원이
-                  발생합니다.
-                </p>
-                <div className="center-list">
-                  {data.centers.map((c) => (
-                    <span className="badge green" key={c.id}>
-                      {c.name} · {member(c.owner_id)?.name}
-                    </span>
-                  ))}
-                </div>
-                <form
-                  className="inline-form"
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    const form = e.currentTarget;
-                    const f = new FormData(form);
-                    const name = String(f.get("name")),
-                      owner = String(f.get("owner"));
-                    if (
-                      await perform("center", { name, owner }, () => {
-                        if (data.centers.some((c) => c.name === name))
-                          throw new Error("이미 존재하는 센터명입니다.");
-                        const next = structuredClone(data);
-                        next.centers.push({
-                          id: crypto.randomUUID(),
-                          name,
-                          owner_id: owner,
-                        });
-                        return demoAudit(next, "센터 생성", name);
-                      })
-                    )
-                      form.reset();
-                  }}
-                >
-                  <label>
-                    센터명
-                    <input
-                      name="name"
-                      required
-                      maxLength={80}
-                      placeholder="센터 이름"
-                    />
-                  </label>
-                  <label>
-                    센터 등급 회원 / 보너스 수령인
-                    <select name="owner" required>
-                      <option value="">회원 선택</option>
-                      {businessMembers.map((m) => (
-                        <option value={m.id} key={m.id}>
-                          {m.name} · {m.member_code}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <button className="button primary" disabled={busy}>
-                    센터 추가
-                  </button>
-                </form>
-              </section>
               <section className="panel">
                 <div className="panel-heading">
                   <h2>관리자 작업 기록</h2>

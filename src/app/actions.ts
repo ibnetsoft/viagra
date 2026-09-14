@@ -226,6 +226,10 @@ export async function mutate(
         p_position: p.position,
         p_center: p.center_id,
       };
+    } else if (action === "update-center") {
+      const p = z.object({ id: uuid, name: z.string().trim().min(1).max(80), owner: uuid }).parse(payload);
+      rpc = "update_center";
+      args = { p_id: p.id, p_name: p.name, p_owner: p.owner };
     } else if (action === "center") {
       const p = z
         .object({ name: z.string().trim().min(1).max(80), owner: uuid })

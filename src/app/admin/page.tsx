@@ -78,6 +78,7 @@ export default async function Page() {
     readAll("centers"),
     readAll("pv_topups"),
     readAll("center_referral_unpaid"),
+    client.rpc("admin_center_stats"),
   ]);
   if (results.some((r) => r.error))
     return (
@@ -87,17 +88,28 @@ export default async function Page() {
         <a href="/admin">다시 시도</a>
       </main>
     );
-  const [members, purchases, bonuses, audits, centers, topups, centerUnpaid] =
-    results.map((r) => r.data ?? []);
+  const [
+    members,
+    purchases,
+    bonuses,
+    audits,
+    centers,
+    topups,
+    centerUnpaid,
+    centerStats,
+  ] = results.map((r) => r.data ?? []);
   return (
     <Workspace
       demo={false}
       initialData={
         {
           members,
-          purchases: purchases.filter((p) => p.payment_method === "pv"),
+          purchases: purchases.filter(
+            (p: Record<string, unknown>) => p.payment_method === "pv",
+          ),
           topups,
           centerUnpaid,
+          centerStats,
           bonuses,
           audits,
           centers,
