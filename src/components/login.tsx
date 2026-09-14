@@ -120,7 +120,9 @@ export default function Login({
               <label>
                 아이디
                 <input name="identifier" type="text" placeholder="아이디" required
-                  maxLength={254} autoComplete="username" autoCapitalize="none" spellCheck={false} />
+                  minLength={4} maxLength={20} pattern="[A-Za-z][A-Za-z0-9_]{3,19}"
+                  title="아이디는 영문으로 시작하는 4~20자의 영문, 숫자, 밑줄만 사용할 수 있습니다."
+                  autoComplete="username" autoCapitalize="none" spellCheck={false} />
               </label>
             )}
             <label>
