@@ -78,20 +78,27 @@ export async function authenticate(form: FormData) {
       });
       if (error) return { error: error.code === "P0001" ? error.message : "추천·후원 배치를 확인하지 못했습니다. 다시 시도하세요." };
     } catch { return { error: "가입 정보를 확인하지 못했습니다. 잠시 후 다시 시도하세요." }; }
-    const { error } = await client.auth.signUp({
-      email: email.data, password: password.data,
-      options: {
-        data: { ...profile.data, ...placement.data, username: username.data, ...(bank?.success ? bank.data : {}) },
+    const { error } = await loginDirectory().auth.admin.createUser({
+      email: email.data,
+      password: password.data,
+      email_confirm: true,
+      user_metadata: {
+        ...profile.data,
+        ...placement.data,
+        username: username.data,
+        ...(bank?.success ? bank.data : {}),
       },
     });
     if (error)
       return {
         error:
-          "가입하지 못했습니다. 아이디 중복, 후원 자리 및 입력 정보를 확인한 뒤 다시 시도하세요.",
+          error.code === "email_exists" || error.message.includes("already")
+            ? "이미 사용 중인 이메일입니다."
+            : "가입하지 못했습니다. 아이디 중복, 추천인·센터 및 입력 정보를 확인한 뒤 다시 시도하세요.",
       };
     return {
       message:
-        "가입 신청이 완료되었습니다. 이메일 인증 후 로그인하세요. 추천인·센터 정보가 저장되었습니다. 후원 배치는 추천인이 조직도에서 지정합니다.",
+        "가입이 완료되었습니다. 아이디와 비밀번호로 바로 로그인하세요. 추천인·센터 정보가 저장되었습니다. 후원 배치는 추천인이 조직도에서 지정합니다.",
     };
   }
   const identifier = String(form.get("identifier") ?? form.get("email") ?? "").trim();
