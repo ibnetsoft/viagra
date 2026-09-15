@@ -246,6 +246,10 @@ export async function mutate(
         .parse(payload);
       rpc = "create_center";
       args = { p_name: p.name, p_owner: p.owner };
+    } else if (action === "delete-center") {
+      const p = z.object({ id: uuid }).parse(payload);
+      rpc = "delete_center";
+      args = { p_id: p.id };
     } else if (action === "close") {
       const p = z
         .object({ day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) })

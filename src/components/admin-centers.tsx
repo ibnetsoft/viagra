@@ -6,11 +6,13 @@ export default function AdminCenters({
   data,
   busy,
   onSave,
+  onDelete,
   onEditMember,
 }: {
   data: AppData;
   busy: boolean;
   onSave: (id: string | null, name: string, owner: string) => Promise<boolean>;
+  onDelete: (id: string) => Promise<boolean>;
   onEditMember: (member: Member) => void;
 }) {
   const [selected, setSelected] = useState("");
@@ -42,6 +44,28 @@ export default function AdminCenters({
   const enrolled = members.filter((m) => m.center_id === center?.id);
   const findName = (id: string) =>
     members.find((m) => m.id === id)?.name ?? "미지정";
+  const centerMemberCount = (id: string) =>
+    members.filter((m) => m.center_id === id).length;
+  const hasCenterRecord = (c: { id: string; name: string }) =>
+    Boolean(
+      data.centerSales?.some((s) => s.center_id === c.id) ||
+        data.centerUnpaid?.some(
+          (r) => r.center_id === c.id || r.center_name === c.name,
+        ) ||
+        data.bonuses.some(
+          (b) =>
+            (b.kind === "center" && b.event_key.endsWith(`:${c.id}`)) ||
+            (b.kind === "center_referral" &&
+              b.event_key.includes(`:${c.id}:`)),
+        ),
+    );
+  const deleteDisabledReason = (c: { id: string; name: string }) => {
+    if (centerMemberCount(c.id) > 0)
+      return "소속 회원이 있는 센터는 삭제할 수 없습니다.";
+    if (hasCenterRecord(c))
+      return "매출 또는 보너스 기록이 있는 센터는 삭제할 수 없습니다.";
+    return "";
+  };
   const stats = data.centerStats?.find((s) => s.center_id === center?.id);
   const paid = (kind: string) =>
     data.bonuses
@@ -220,21 +244,42 @@ export default function AdminCenters({
                           ))
                         : "없음"}
                     </td>
+                    <td>{centerMemberCount(c.id)}명</td>
                     <td>
-                      {members.filter((m) => m.center_id === c.id).length}명
-                    </td>
-                    <td>
-                      <button
-                        className="button"
-                        onClick={() => {
-                          setEditing(c.id);
-                          setName(c.name);
-                          setOwner(c.owner_id);
-                          setOwnerQuery(findName(c.owner_id));
-                        }}
-                      >
-                        센터 수정
-                      </button>
+                      <div className="center-actions">
+                        <button
+                          className="button"
+                          onClick={() => {
+                            setEditing(c.id);
+                            setName(c.name);
+                            setOwner(c.owner_id);
+                            setOwnerQuery(findName(c.owner_id));
+                          }}
+                        >
+                          센터 수정
+                        </button>
+                        <button
+                          type="button"
+                          className="button danger"
+                          disabled={busy || Boolean(deleteDisabledReason(c))}
+                          title={deleteDisabledReason(c) || "센터 삭제"}
+                          onClick={async () => {
+                            if (!confirm(`${c.name} 센터를 삭제할까요?`))
+                              return;
+                            if (await onDelete(c.id)) {
+                              if (selected === c.id) setSelected("");
+                              if (editing === c.id) {
+                                setEditing(null);
+                                setName("");
+                                setOwner("");
+                                setOwnerQuery("");
+                              }
+                            }
+                          }}
+                        >
+                          삭제
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

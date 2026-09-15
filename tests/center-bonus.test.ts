@@ -124,8 +124,22 @@ test("daily center split: initial/repeat, snapshot, cap exemption, unpaid and pe
       ),
       0,
     );
+    const unusedCenter = crypto.randomUUID();
+    await db.exec("reset role");
+    await db.query(
+      "insert into public.centers(id,name,owner_id) values($1,'미사용센터',$2)",
+      [unusedCenter, buyer],
+    );
+    await db.query("select set_config('request.jwt.claim.sub',$1,false)", [
+      buyer,
+    ]);
+    await db.exec("set role authenticated");
     await assert.rejects(db.query("select public.admin_center_stats()"), /관리자/);
     await assert.rejects(db.query("select public.update_center($1,'거부',$2)",[center,buyer]), /관리자/);
+    await assert.rejects(
+      db.query("select public.delete_center($1)", [unusedCenter]),
+      /관리자/,
+    );
     await assert.rejects(
       db.query("select private.settle_centers(current_date-1)"),
       /permission denied/,
@@ -143,6 +157,19 @@ test("daily center split: initial/repeat, snapshot, cap exemption, unpaid and pe
     const stats=(await db.query<any>("select public.admin_center_stats() stats")).rows[0].stats;
     assert.equal(Number(stats[0].sales_pv),700000);
     await assert.rejects(db.query("select public.update_center($1,'테스트',$2)",[center,admin]),/정상 회원/);
+    await assert.rejects(
+      db.query("select public.delete_center($1)", [center]),
+      /소속 회원/,
+    );
+    await db.query("select public.delete_center($1)", [unusedCenter]);
+    assert.equal(
+      Number(
+        (await db.query<any>("select count(*) count from public.centers where id=$1", [
+          unusedCenter,
+        ])).rows[0].count,
+      ),
+      0,
+    );
     await db.query("select public.update_center($1,'수정센터',$2)",[center,buyer]);
     assert.equal((await db.query<any>('select name from public.centers where id=$1',[center])).rows[0].name,'수정센터');
     await db.exec('reset role');

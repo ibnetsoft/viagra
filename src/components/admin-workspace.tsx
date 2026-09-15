@@ -1154,6 +1154,33 @@ export default function AdminWorkspace({
                   },
                 )
               }
+              onDelete={async (id) =>
+                perform("delete-center", { id }, () => {
+                  const next = structuredClone(data);
+                  const center = next.centers.find((c) => c.id === id);
+                  if (!center) throw new Error("센터를 찾을 수 없습니다.");
+                  if (next.members.some((m) => m.center_id === id))
+                    throw new Error("소속 회원이 있는 센터는 삭제할 수 없습니다.");
+                  if (
+                    next.centerSales?.some((s) => s.center_id === id) ||
+                    next.centerUnpaid?.some(
+                      (r) => r.center_id === id || r.center_name === center.name,
+                    ) ||
+                    next.bonuses.some(
+                      (b) =>
+                        (b.kind === "center" && b.event_key.endsWith(`:${id}`)) ||
+                        (b.kind === "center_referral" &&
+                          b.event_key.includes(`:${id}:`)),
+                    )
+                  )
+                    throw new Error("매출 또는 보너스 기록이 있는 센터는 삭제할 수 없습니다.");
+                  next.centers = next.centers.filter((c) => c.id !== id);
+                  next.centerStats = next.centerStats?.filter(
+                    (s) => s.center_id !== id,
+                  );
+                  return demoAudit(next, "센터 삭제", center.name);
+                })
+              }
             />
           )}
           {tab === "settings" && (

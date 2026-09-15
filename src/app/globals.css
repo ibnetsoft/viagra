@@ -412,6 +412,17 @@ button svg {
 .button.primary:hover {
   background: var(--admin-surface-115348, #115348);
 }
+.button.danger {
+  color: #a64231;
+  border-color: color-mix(in srgb, #a64231 35%, var(--admin-edge-e2e7e6, #e2e7e6));
+}
+.button.danger:hover:not(:disabled) {
+  background: color-mix(in srgb, #a64231 10%, var(--admin-surface-ffffff, #fff));
+}
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
 .button.compact {
   font-size: 11px;
   padding: 6px 10px;
@@ -1843,6 +1854,7 @@ fieldset:disabled {
   gap: 12px;
 }
 
+.center-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .center-owner-search { flex: 1; min-width: 240px; }
 .center-owner-search > label { display: block; margin-bottom: 8px; }
 .center-owner-search > input { width: 100%; }
