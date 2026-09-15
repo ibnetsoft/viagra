@@ -1628,11 +1628,12 @@ function Stat({
   );
 }
 function Person({ member }: { member: Member }) {
+  const username = member.username ?? member.member_code.toLowerCase();
   return (
     <div className="person">
-      <span className="avatar small-avatar">{member.name.slice(0, 1)}</span>
+      <span className="avatar small-avatar">{username.slice(0, 1).toUpperCase()}</span>
       <div>
-        <strong>{member.name}</strong>
+        <strong>{username}</strong>
         <small>{member.member_code}</small>
       </div>
     </div>
