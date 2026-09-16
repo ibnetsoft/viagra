@@ -128,7 +128,8 @@ export default function AdminWorkspace({
     [edit, setEdit] = useState<Member | null>(null),
     [shipping, setShipping] = useState<Purchase | null>(null);
   const [filter, setFilter] = useState("all"),
-    [orgMode, setOrgMode] = useState<"sponsor" | "referral">("sponsor");
+    [orgMode, setOrgMode] = useState<"sponsor" | "referral">("sponsor"),
+    [orgRootQuery, setOrgRootQuery] = useState("");
   const [orgRoot, setOrgRoot] = useState(userId),
     [orgDepth, setOrgDepth] = useState(3),
     [orgZoom, setOrgZoom] = useState(1),
@@ -191,6 +192,15 @@ export default function AdminWorkspace({
       )?.id ??
       businessMembers[0]?.id ??
       "");
+  const orgRootNeedle = orgRootQuery.trim().toLocaleLowerCase();
+  const orgRootOptions = orgRootNeedle
+    ? businessMembers.filter((m) =>
+        `${m.name} ${m.username ?? ""} ${m.member_code}`
+          .toLocaleLowerCase()
+          .includes(orgRootNeedle),
+      )
+    : businessMembers;
+  const orgRootSelectionVisible = orgRootOptions.some((m) => m.id === networkRoot);
   const me = data.members.find((m) => m.id === userId) ?? data.members[0];
   const member = (id: string | null) => data.members.find((m) => m.id === id);
   const selectTab = (t: Tab) => {
@@ -999,17 +1009,38 @@ export default function AdminWorkspace({
                       확대
                     </button>
                   </div>
-                  <select
-                    aria-label="조직도 기준 회원"
-                    value={networkRoot}
-                    onChange={(e) => setOrgRoot(e.target.value)}
-                  >
-                    {businessMembers.map((m) => (
-                      <option value={m.id} key={m.id}>
-                        {m.name} · {m.member_code}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="org-root-picker">
+                    <input
+                      aria-label="조직도 기준 회원 검색"
+                      value={orgRootQuery}
+                      onChange={(e) => setOrgRootQuery(e.target.value)}
+                      placeholder="이름 또는 아이디 검색"
+                    />
+                    <select
+                      aria-label="조직도 기준 회원"
+                      value={orgRootSelectionVisible ? networkRoot : ""}
+                      onChange={(e) => {
+                        if (!e.target.value) return;
+                        setOrgRoot(e.target.value);
+                      }}
+                    >
+                      {!orgRootSelectionVisible && (
+                        <option value="" disabled>
+                          검색 결과에서 선택
+                        </option>
+                      )}
+                      {orgRootOptions.map((m) => (
+                        <option value={m.id} key={m.id}>
+                          {m.name} · {m.username ?? m.member_code}
+                        </option>
+                      ))}
+                      {orgRootOptions.length === 0 && (
+                        <option value="" disabled>
+                          검색 결과 없음
+                        </option>
+                      )}
+                    </select>
+                  </div>
                 </div>
               </div>
               <div className="tree-canvas">
