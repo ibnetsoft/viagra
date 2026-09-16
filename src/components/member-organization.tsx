@@ -8,6 +8,7 @@ import {
   type OrganizationNode,
 } from "@/lib/member-data";
 import { seedDemo } from "@/lib/demo";
+import { money } from "@/lib/domain";
 
 export default function MemberOrganization({
   demo,
@@ -29,6 +30,13 @@ export default function MemberOrganization({
   const [revision,setRevision] = useState(0);
   const [notice,setNotice] = useState("");
   const dialog = useRef<HTMLDialogElement>(null);
+  const fullDate = (s: string) =>
+    new Intl.DateTimeFormat("ko-KR", {
+      year: "2-digit",
+      month: "2-digit",
+      day: "2-digit",
+      timeZone: "Asia/Seoul",
+    }).format(new Date(s));
   const root = path.at(-1)?.id ?? memberId;
   async function confirmPlacement() {
     if (!placement || saving) return;
@@ -160,7 +168,7 @@ export default function MemberOrganization({
             <div className="member-org-root">
               <Network size={24} />
               <strong>{data.root.name}</strong>
-              <small>{data.root.member_code}</small>
+              <NodeDetails node={data.root} />
               <span>
                 직접 {mode === "sponsor" ? "후원" : "추천"} {data.total}명
               </span>
@@ -229,6 +237,15 @@ export default function MemberOrganization({
       </dialog>
     </>
   );
+  function NodeDetails({ node }: { node: OrganizationNode }) {
+    return (
+      <small className="member-org-meta">
+        <span>{node.phone || "전화번호 미입력"}</span>
+        <span>가입일 {node.created_at ? fullDate(node.created_at) : "-"}</span>
+        <span>매출PV {money(Number(node.sales_pv ?? 0))} PV</span>
+      </small>
+    );
+  }
   function card(node: OrganizationNode) {
     return (
       <button
@@ -239,7 +256,7 @@ export default function MemberOrganization({
         }}
       >
         <strong>{node.name}</strong>
-        <small>{node.member_code}</small>
+        <NodeDetails node={node} />
         <span>
           {node.has_children ? "산하 보기" : "하위 회원 없음"}
           <ChevronRight size={13} />

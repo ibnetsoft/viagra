@@ -98,7 +98,13 @@ test("PV order atomicity, retry, capped rewards, authorization and scoped trees"
         ])
       ).rows[0].tree;
     const referral = await org("referral", buyer);
+    assert.equal(Number(referral.root.sales_pv), 300000);
+    assert.equal(referral.root.phone, "010-0000-0000");
+    assert.ok(referral.root.created_at);
     assert.equal(referral.children[0].id, child);
+    assert.equal(referral.children[0].phone, "010-0000-0000");
+    assert.equal(Number(referral.children[0].sales_pv), 0);
+    assert.ok(referral.children[0].created_at);
     assert.equal("email" in referral.children[0], false);
     assert.equal("pv" in referral.children[0], false);
     assert.equal((await org("sponsor", buyer)).total, 0);
@@ -189,5 +195,9 @@ test("demo shop spends PV and own organization excludes unrelated members", () =
   );
   const tree = demoOrganization(updated, "demo-1", "sponsor");
   assert.equal(tree.children.length, 2);
+  assert.equal(tree.root.sales_pv, 500000);
+  assert.ok(tree.root.phone);
+  assert.ok(tree.root.created_at);
   assert.equal("address" in tree.children[0], false);
 });
+

@@ -93,6 +93,13 @@ const titles: Record<Tab, [string, string]> = {
   settings: ["운영 설정", "보상 기준, 일일 정산과 작업 기록을 관리하세요."],
 };
 const demoStorage = "vital-partners-demo-v2";
+const fullDate = (s: string) =>
+  new Intl.DateTimeFormat("ko-KR", {
+    year: "2-digit",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: "Asia/Seoul",
+  }).format(new Date(s));
 
 export default function AdminWorkspace({
   demo,
@@ -154,6 +161,14 @@ export default function AdminWorkspace({
   const memberNumbers = new Map(
     businessMembers.map((m, index) => [m.id, businessMembers.length - index]),
   );
+  const memberSalesPv = new Map<string, number>();
+  for (const purchase of data.purchases) {
+    if (purchase.payment_method !== "pv") continue;
+    memberSalesPv.set(
+      purchase.member_id,
+      (memberSalesPv.get(purchase.member_id) ?? 0) + purchase.pv,
+    );
+  }
   const networkRoot = businessMembers.some((m) => m.id === orgRoot)
     ? orgRoot
     : (businessMembers.find(
@@ -966,6 +981,7 @@ export default function AdminWorkspace({
                 <TreeNode
                   id={networkRoot}
                   members={businessMembers}
+                  salesPv={memberSalesPv}
                   mode={orgMode}
                   depth={0}
                 />
@@ -1830,11 +1846,13 @@ function Modal({
 function TreeNode({
   id,
   members,
+  salesPv,
   mode,
   depth,
 }: {
   id: string;
   members: Member[];
+  salesPv: Map<string, number>;
   mode: "sponsor" | "referral";
   depth: number;
 }) {
@@ -1848,9 +1866,12 @@ function TreeNode({
   return (
     <div className="tree-branch">
       <div className={`tree-node ${depth === 0 ? "root-node" : ""}`}>
-        <span className="avatar">{m.name.slice(0, 1)}</span>
         <strong>{m.name}</strong>
-        <small>{m.member_code}</small>
+        <small className="tree-meta">
+          <span>{m.phone || "전화번호 미입력"}</span>
+          <span>가입일 {fullDate(m.created_at)}</span>
+          <span>매출PV {money(salesPv.get(m.id) ?? 0)} PV</span>
+        </small>
         <span className="tree-position">
           {depth === 0
             ? "기준 회원"
@@ -1868,6 +1889,7 @@ function TreeNode({
               key={c.id}
               id={c.id}
               members={members}
+              salesPv={salesPv}
               mode={mode}
               depth={depth + 1}
             />

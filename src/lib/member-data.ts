@@ -35,6 +35,9 @@ export type OrganizationNode = {
   id: string;
   name: string;
   member_code: string;
+  phone?: string;
+  created_at?: string;
+  sales_pv?: number;
   position: "L" | "R" | null;
   has_children?: boolean;
 };
@@ -68,6 +71,11 @@ export function demoOrganization(
     id: m.id,
     name: m.name,
     member_code: m.member_code,
+    phone: m.phone,
+    created_at: m.created_at,
+    sales_pv: data.purchases
+      .filter((p) => p.member_id === m.id && p.payment_method === "pv")
+      .reduce((sum, p) => sum + p.pv, 0),
     position: mode === "sponsor" ? m.position : null,
     has_children: data.members.some((c) => c[key] === m.id),
   });

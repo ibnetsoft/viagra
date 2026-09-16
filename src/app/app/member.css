@@ -709,6 +709,12 @@
   font-size: 10px;
   overflow-wrap: anywhere;
 }
+.member-org-meta {
+  display: grid;
+  gap: 3px;
+  line-height: 1.55;
+  text-align: center;
+}
 .member-org-root span {
   font-size: 11px;
 }
@@ -740,7 +746,7 @@
 }
 .member-org-node {
   width: 100%;
-  min-height: 115px;
+  min-height: 145px;
   border: 1px solid var(--m-border, #d6e1ce);
   border-radius: 12px;
   background: var(--m-surface, white);

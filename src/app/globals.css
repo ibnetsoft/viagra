@@ -1011,8 +1011,8 @@ td small {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 15px 25px;
-  width: 145px;
+  padding: 15px 18px;
+  width: 180px;
   position: relative;
   gap: 6px;
 }
@@ -1022,6 +1022,12 @@ td small {
 .tree-node small {
   font-size: 9px;
   color: var(--admin-text-9daaa2, #9daaa2);
+}
+.tree-meta {
+  display: grid;
+  gap: 3px;
+  line-height: 1.45;
+  text-align: center;
 }
 .root-node {
   border-color: var(--admin-edge-81ab98, #81ab98);
