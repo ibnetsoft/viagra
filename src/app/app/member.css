@@ -954,3 +954,109 @@
 .member-theme .demo-link {
   color: var(--m-muted, #71907b);
 }
+
+
+.member-org-controls {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin: 0 0 16px;
+}
+.member-org-controls label {
+  display: grid;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--m-muted, #74836a);
+}
+.member-org-controls select {
+  width: 100%;
+  padding: 11px;
+  border: 1px solid var(--m-border, #dce4d7);
+  border-radius: 10px;
+  background: var(--m-surface, #fff);
+  color: var(--m-text, #203c31);
+}
+.member-zoom-controls {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.member-zoom-controls button {
+  border: 1px solid var(--m-border, #dce4d7);
+  background: var(--m-surface, #fff);
+  color: var(--m-accent, #205e4e);
+  border-radius: 10px;
+  padding: 11px 8px;
+  font: inherit;
+  font-size: 11px;
+}
+.member-org-viewport {
+  overflow: auto;
+  padding: 24px 10px 34px;
+  touch-action: none;
+}
+.member-org-scale {
+  width: max-content;
+  min-width: 100%;
+  transform-origin: top center;
+  transition: transform .15s ease;
+}
+.member-org-tree-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 154px;
+}
+.member-org-node-card {
+  width: 154px;
+}
+.member-org-tree-children {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  padding-top: 26px;
+  position: relative;
+}
+.member-org-tree-children:before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 1px;
+  height: 26px;
+  background: var(--m-soft, #b7cbb4);
+}
+.member-org-tree-children > .member-org-branch {
+  min-width: 154px;
+}
+.member-org-tree-children > .member-org-branch:after {
+  content: "";
+  position: absolute;
+  top: 18px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--m-soft, #b7cbb4);
+  z-index: 0;
+}
+.member-org-tree-children > .member-org-branch:first-child:after {
+  left: 50%;
+}
+.member-org-tree-children > .member-org-branch:last-child:after {
+  right: 50%;
+}
+.member-org-tree-children > .member-org-branch > span,
+.member-org-tree-children > .member-org-branch > .member-org-tree-node,
+.member-org-tree-children > .member-org-branch > .member-org-vacant {
+  position: relative;
+  z-index: 1;
+}
+@media (min-width: 420px) {
+  .member-org-controls {
+    grid-template-columns: 1fr auto;
+    align-items: end;
+  }
+  .member-zoom-controls {
+    min-width: 210px;
+  }
+}

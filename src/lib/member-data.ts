@@ -38,12 +38,16 @@ export type OrganizationNode = {
   phone?: string;
   created_at?: string;
   sales_pv?: number;
+  parent_id?: string | null;
+  depth?: number;
   position: "L" | "R" | null;
   has_children?: boolean;
+  children?: OrganizationNode[];
 };
 export type OrganizationData = {
   root: OrganizationNode;
   children: OrganizationNode[];
+  nodes?: OrganizationNode[];
   total: number;
 };
 export function demoOrganization(
@@ -52,6 +56,7 @@ export function demoOrganization(
   mode: "referral" | "sponsor",
   root = me,
   offset = 0,
+  depthLimit = 1,
 ): OrganizationData {
   data = { ...data, members: data.members.filter((m) => m.role === "member") };
   if (
@@ -67,24 +72,43 @@ export function demoOrganization(
     ancestor = data.members.find((m) => m.id === ancestor)?.[key] ?? null;
   }
   if (ancestor !== me) throw new Error("본인 산하만 조회할 수 있습니다.");
-  const node = (m: Member): OrganizationNode => ({
-    id: m.id,
-    name: m.name,
-    member_code: m.member_code,
-    phone: m.phone,
-    created_at: m.created_at,
-    sales_pv: data.purchases
-      .filter((p) => p.member_id === m.id && p.payment_method === "pv")
-      .reduce((sum, p) => sum + p.pv, 0),
-    position: mode === "sponsor" ? m.position : null,
-    has_children: data.members.some((c) => c[key] === m.id),
-  });
-  const children = data.members
-    .filter((m) => m[key] === root)
-    .sort((a, b) => a.member_code.localeCompare(b.member_code));
-  return {
-    root: node(data.members.find((m) => m.id === root)!),
-    children: children.slice(offset, offset + 50).map(node),
-    total: children.length,
+  const node = (m: Member, depth = 0, parent: string | null = null): OrganizationNode => {
+    const direct = data.members
+      .filter((c) => c[key] === m.id)
+      .sort((a, b) =>
+        mode === "sponsor"
+          ? `${a.position ?? ""}${a.member_code}`.localeCompare(`${b.position ?? ""}${b.member_code}`)
+          : a.member_code.localeCompare(b.member_code),
+      );
+    const includeChildren = depthLimit === 0 || depth < depthLimit;
+    return {
+      id: m.id,
+      name: m.name,
+      member_code: m.member_code,
+      phone: m.phone,
+      created_at: m.created_at,
+      sales_pv: data.purchases
+        .filter((p) => p.member_id === m.id && p.payment_method === "pv")
+        .reduce((sum, p) => sum + p.pv, 0),
+      parent_id: parent,
+      depth,
+      position: mode === "sponsor" ? m.position : null,
+      has_children: direct.length > 0,
+      children: includeChildren ? direct.map((c) => node(c, depth + 1, m.id)) : [],
+    };
   };
+  const rootMember = data.members.find((m) => m.id === root)!;
+  const rootNode = node(rootMember);
+  return {
+    root: rootNode,
+    children: rootNode.children ?? [],
+    total: countDescendants(rootNode),
+  };
+}
+
+function countDescendants(node: OrganizationNode): number {
+  return (node.children ?? []).reduce(
+    (sum, child) => sum + 1 + countDescendants(child),
+    0,
+  );
 }

@@ -93,6 +93,14 @@ const titles: Record<Tab, [string, string]> = {
   settings: ["운영 설정", "보상 기준, 일일 정산과 작업 기록을 관리하세요."],
 };
 const demoStorage = "vital-partners-demo-v2";
+const orgDepthOptions = [
+  { label: "전체", value: 0 },
+  { label: "3단계", value: 3 },
+  { label: "5단계", value: 5 },
+  { label: "10단계", value: 10 },
+  { label: "15단계", value: 15 },
+  { label: "20단계", value: 20 },
+] as const;
 const fullDate = (s: string) =>
   new Intl.DateTimeFormat("ko-KR", {
     year: "2-digit",
@@ -122,6 +130,8 @@ export default function AdminWorkspace({
   const [filter, setFilter] = useState("all"),
     [orgMode, setOrgMode] = useState<"sponsor" | "referral">("sponsor");
   const [orgRoot, setOrgRoot] = useState(userId),
+    [orgDepth, setOrgDepth] = useState(3),
+    [orgZoom, setOrgZoom] = useState(1),
     [page, setPage] = useState(1);
   const requestId = useRef("");
   const [serviceMemberId, setServiceMemberId] = useState<string | null>(null);
@@ -189,6 +199,10 @@ export default function AdminWorkspace({
     setFilter("all");
     setPage(1);
   };
+  const setOrgZoomStep = (delta: number) =>
+    setOrgZoom((value) =>
+      Math.min(1.8, Math.max(0.45, Number((value + delta).toFixed(2)))),
+    );
   const persist = (next: AppData) => {
     if (demo) localStorage.setItem(demoStorage, JSON.stringify(next));
     setData(next);
@@ -962,35 +976,62 @@ export default function AdminWorkspace({
                     추천 관계도
                   </button>
                 </div>
-                <select
-                  aria-label="조직도 기준 회원"
-                  value={networkRoot}
-                  onChange={(e) => setOrgRoot(e.target.value)}
-                >
-                  {businessMembers.map((m) => (
-                    <option value={m.id} key={m.id}>
-                      {m.name} · {m.member_code}
-                    </option>
-                  ))}
-                </select>
+                <div className="org-toolbar-controls">
+                  <select
+                    aria-label="조직도 표시 단계"
+                    value={orgDepth}
+                    onChange={(e) => setOrgDepth(Number(e.target.value))}
+                  >
+                    {orgDepthOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="zoom-controls" aria-label="조직도 확대 축소">
+                    <button className="button compact" onClick={() => setOrgZoomStep(-0.1)}>
+                      축소
+                    </button>
+                    <button className="button compact" onClick={() => setOrgZoom(1)}>
+                      {Math.round(orgZoom * 100)}%
+                    </button>
+                    <button className="button compact" onClick={() => setOrgZoomStep(0.1)}>
+                      확대
+                    </button>
+                  </div>
+                  <select
+                    aria-label="조직도 기준 회원"
+                    value={networkRoot}
+                    onChange={(e) => setOrgRoot(e.target.value)}
+                  >
+                    {businessMembers.map((m) => (
+                      <option value={m.id} key={m.id}>
+                        {m.name} · {m.member_code}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
               <div className="tree-canvas">
                 {!networkRoot && (
                   <p className="empty">등록된 회원이 없습니다.</p>
                 )}
-                <TreeNode
-                  id={networkRoot}
-                  members={businessMembers}
-                  salesPv={memberSalesPv}
-                  mode={orgMode}
-                  depth={0}
-                />
+                <div className="tree-scale" style={{ transform: `scale(${orgZoom})` }}>
+                  <TreeNode
+                    id={networkRoot}
+                    members={businessMembers}
+                    salesPv={memberSalesPv}
+                    mode={orgMode}
+                    depth={0}
+                    maxDepth={orgDepth}
+                  />
+                </div>
               </div>
               <div className="panel-footer">
                 {orgMode === "sponsor"
                   ? "좌·우 배치는 추천인과 별도로 관리됩니다."
                   : "추천 관계를 기준으로 표시합니다. 후원 배치와 다를 수 있습니다."}{" "}
-                · 최대 3개 세대 표시, 기준 회원을 바꿔 하위 조직을 확인하세요.
+                · 표시 단계를 바꾸거나 확대·축소해서 하위 조직을 확인하세요.
               </div>
             </section>
           )}
@@ -1849,12 +1890,14 @@ function TreeNode({
   salesPv,
   mode,
   depth,
+  maxDepth,
 }: {
   id: string;
   members: Member[];
   salesPv: Map<string, number>;
   mode: "sponsor" | "referral";
   depth: number;
+  maxDepth: number;
 }) {
   const m = members.find((m) => m.id === id);
   if (!m) return null;
@@ -1862,7 +1905,12 @@ function TreeNode({
     .filter((m) =>
       mode === "sponsor" ? m.sponsor_id === id : m.referrer_id === id,
     )
-    .sort((a, b) => (a.position ?? "").localeCompare(b.position ?? ""));
+    .sort((a, b) =>
+      mode === "sponsor"
+        ? `${a.position ?? ""}${a.name}`.localeCompare(`${b.position ?? ""}${b.name}`)
+        : a.name.localeCompare(b.name),
+    );
+  const canRenderChildren = maxDepth === 0 || depth < maxDepth;
   return (
     <div className="tree-branch">
       <div className={`tree-node ${depth === 0 ? "root-node" : ""}`}>
@@ -1882,7 +1930,7 @@ function TreeNode({
               : "직접 추천"}
         </span>
       </div>
-      {depth < 2 && children.length > 0 && (
+      {canRenderChildren && children.length > 0 && (
         <div className="tree-children">
           {children.map((c) => (
             <TreeNode
@@ -1892,6 +1940,7 @@ function TreeNode({
               salesPv={salesPv}
               mode={mode}
               depth={depth + 1}
+              maxDepth={maxDepth}
             />
           ))}
         </div>

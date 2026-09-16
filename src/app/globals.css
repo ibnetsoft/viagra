@@ -1874,3 +1874,30 @@ fieldset:disabled {
 .signup-confirmation input[type=checkbox] { width: auto; margin-top: 4px; flex-shrink: 0; }
 .signup-confirm-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
 [data-member-theme="dark"] .signup-confirmation { background: #14251e; color: #e6f0e8; border-color: #506459; }
+
+
+.org-toolbar-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.org-toolbar-controls > select {
+  width: auto;
+  min-width: 150px;
+}
+.zoom-controls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.tree-canvas {
+  transform-origin: top center;
+}
+.tree-scale {
+  width: max-content;
+  min-width: 100%;
+  transform-origin: top center;
+  transition: transform .15s ease;
+}

@@ -327,6 +327,30 @@ export async function loadOrganization(
   return error ? { error: error.message } : { data };
 }
 
+export async function loadOrganizationTree(
+  mode: "referral" | "sponsor",
+  root: string | null,
+  depth = 3,
+) {
+  const client = await createClient();
+  const {
+    data: { user },
+  } = await client.auth.getUser();
+  if (!user) return { error: "로그인이 필요합니다." };
+  if (
+    !["referral", "sponsor"].includes(mode) ||
+    (root && !z.uuid().safeParse(root).success) ||
+    ![0, 3, 5, 10, 15, 20].includes(depth)
+  )
+    return { error: "조회 조건을 확인하세요." };
+  const { data, error } = await client.rpc("my_organization_tree", {
+    p_mode: mode,
+    p_root: root,
+    p_depth: depth,
+  });
+  return error ? { error: error.message } : { data };
+}
+
 export async function saveMyBank(form: FormData): Promise<{ error?: string }> {
   const bank = bankFields.safeParse(Object.fromEntries(form));
   if (!bank.success)
