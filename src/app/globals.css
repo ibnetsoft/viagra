@@ -1929,3 +1929,8 @@ fieldset:disabled {
     width: 100%;
   }
 }
+.action-pair {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}

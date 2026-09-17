@@ -271,6 +271,10 @@ export default function AdminWorkspace({
       (filter === "all" || bonusType(b) === filter) &&
       (!search || b.member_id === search),
   );
+  const allWithdrawals = [...(data.withdrawals ?? [])].sort((a, b) =>
+    b.created_at.localeCompare(a.created_at),
+  );
+  const pendingWithdrawals = allWithdrawals.filter((w) => w.status === "pending");
   const shipments = data.purchases.filter(
     (p) =>
       (filter === "all" || p.shipping_status === filter) &&
@@ -1092,6 +1096,107 @@ export default function AdminWorkspace({
                 />
               </div>
               <section className="panel padded">
+                <div className="table-toolbar">
+                  <h2>출금 신청 관리</h2>
+                  <span>승인대기 {pendingWithdrawals.length}건</span>
+                </div>
+                <div className="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>신청일</th>
+                        <th>회원</th>
+                        <th>금액</th>
+                        <th>계좌</th>
+                        <th>상태</th>
+                        <th>메모</th>
+                        <th>관리</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {allWithdrawals.map((row) => (
+                        <tr key={row.id}>
+                          <td>{date(row.created_at)}</td>
+                          <td>{member(row.member_id)?.name ?? "회원"}</td>
+                          <td>{money(row.amount)}원</td>
+                          <td>
+                            {row.bank_name} · {row.account_number}
+                            <small className="table-sub">{row.account_holder}</small>
+                          </td>
+                          <td>
+                            {row.status === "pending"
+                              ? "승인대기"
+                              : row.status === "approved"
+                                ? "승인완료"
+                                : "반려"}
+                          </td>
+                          <td>
+                            {row.note || "-"}
+                            {row.admin_note && (
+                              <small className="table-sub">관리자: {row.admin_note}</small>
+                            )}
+                          </td>
+                          <td>
+                            {row.status === "pending" ? (
+                              <div className="action-pair">
+                                <button
+                                  className="button compact"
+                                  disabled={busy}
+                                  onClick={() =>
+                                    perform(
+                                      "withdrawal",
+                                      { id: row.id, status: "approved", note: "" },
+                                      () => {
+                                        const next = structuredClone(data);
+                                        const target = next.withdrawals?.find((w) => w.id === row.id);
+                                        if (target) {
+                                          target.status = "approved";
+                                          target.processed_at = new Date().toISOString();
+                                          target.processed_by = userId;
+                                        }
+                                        return demoAudit(next, "출금 승인", `${member(row.member_id)?.name ?? "회원"} · ${money(row.amount)}원`);
+                                      },
+                                    )
+                                  }
+                                >
+                                  승인
+                                </button>
+                                <button
+                                  className="button compact danger"
+                                  disabled={busy}
+                                  onClick={() =>
+                                    perform(
+                                      "withdrawal",
+                                      { id: row.id, status: "rejected", note: "관리자 반려" },
+                                      () => {
+                                        const next = structuredClone(data);
+                                        const target = next.withdrawals?.find((w) => w.id === row.id);
+                                        if (target) {
+                                          target.status = "rejected";
+                                          target.admin_note = "관리자 반려";
+                                          target.processed_at = new Date().toISOString();
+                                          target.processed_by = userId;
+                                        }
+                                        return demoAudit(next, "출금 반려", `${member(row.member_id)?.name ?? "회원"} · ${money(row.amount)}원`);
+                                      },
+                                    )
+                                  }
+                                >
+                                  반려
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="muted small">처리완료</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {!allWithdrawals.length && <Empty text="출금 신청 내역이 없습니다." />}
+              </section>
+              <section className="panel padded">
                 <h2>센터장추천미지급</h2>
                 <p>
                   누적{" "}
@@ -1561,6 +1666,7 @@ export default function AdminWorkspace({
                   "",
                 ),
                 account_holder: String(f.get("account_holder") ?? ""),
+                password: String(f.get("password") ?? ""),
                 status: String(f.get("status")) as Member["status"],
                 referrer_id: String(f.get("referrer_id") || "") || null,
                 sponsor_id: String(f.get("sponsor_id") || "") || null,
@@ -1608,6 +1714,17 @@ export default function AdminWorkspace({
               로그인 아이디:{" "}
               <strong>{edit.username ?? edit.member_code.toLowerCase()}</strong>
             </p>
+            <label>
+              비밀번호 변경 (선택)
+              <input
+                name="password"
+                type="password"
+                minLength={8}
+                maxLength={128}
+                placeholder="변경할 때만 입력"
+                autoComplete="new-password"
+              />
+            </label>
             <div className="form-grid">
               <label>
                 이름

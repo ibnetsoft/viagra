@@ -24,6 +24,8 @@ import { MemberThemeToggle, MemberThemeSettings } from "./member-theme";
 import MemberBank from "./member-bank";
 import MemberShop from "./member-shop";
 import MemberOrganization from "./member-organization";
+import { MemberAddress, MemberBasicInfo } from "./member-profile-settings";
+import MemberWithdrawals from "./member-withdrawals";
 export type MemberSection =
   | "home"
   | "bonuses"
@@ -250,6 +252,7 @@ export default function MemberApp({
                   남은 한도 {money(remaining)}원 · 센터/센터소개는 한도 제외
                 </p>
               </section>
+              <MemberWithdrawals data={data} />
               <div className="member-filter">
                 <button
                   className={filter === "all" ? "on" : ""}
@@ -370,8 +373,7 @@ export default function MemberApp({
                 ))}
               <p className="member-explanation">
                 상품 메뉴에서 PV로 구매할 수 있어요. PV 충전은 입금 확인 후
-                관리자가 처리해요. 배송지 변경은 발송 전에 관리자에게 문의해
-                주세요.
+                관리자가 처리해요. 배송지 변경은 내 정보에서 직접 수정할 수 있어요.
               </p>
             </>
           )}
@@ -389,40 +391,13 @@ export default function MemberApp({
                 </span>
                 <p>{member.member_code}</p>
               </section>
-              <section className="member-card">
-                <h2>기본 정보</h2>
-                <dl className="member-details">
-                  <div>
-                    <dt>아이디</dt>
-                    <dd>
-                      {member.username ?? member.member_code.toLowerCase()}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>이메일</dt>
-                    <dd>{member.email}</dd>
-                  </div>
-                  <div>
-                    <dt>연락처</dt>
-                    <dd>{member.phone}</dd>
-                  </div>
-                  <div>
-                    <dt>소속 센터</dt>
-                    <dd>{centerName ?? "미배정"}</dd>
-                  </div>
-                </dl>
-              </section>
-              <section className="member-card">
-                <h2>나의 배송지</h2>
-                <p className="member-address">
-                  ({member.postcode}) {member.address}
-                  <br />
-                  {member.address_detail}
-                </p>
-                <p className="member-explanation">
-                  연락처와 주소 변경은 관리자에게 요청해 주세요.
-                </p>
-              </section>
+              <MemberBasicInfo
+                data={data}
+                demo={demo}
+                centerName={centerName}
+                onChange={setData}
+              />
+              <MemberAddress data={data} demo={demo} onChange={setData} />
               <MemberThemeSettings />
               <MemberBank data={data} demo={demo} onChange={setData} />
               <button

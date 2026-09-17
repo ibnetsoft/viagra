@@ -51,7 +51,8 @@ export default async function Page() {
       | "bonuses"
       | "centers"
       | "pv_topups"
-      | "center_referral_unpaid",
+      | "center_referral_unpaid"
+      | "withdrawals",
   ) {
     const rows: Record<string, unknown>[] = [];
     for (let offset = 0; ; offset += 500) {
@@ -78,6 +79,7 @@ export default async function Page() {
     readAll("centers"),
     readAll("pv_topups"),
     readAll("center_referral_unpaid"),
+    readAll("withdrawals"),
     client.rpc("admin_center_stats"),
   ]);
   if (results.some((r) => r.error))
@@ -96,6 +98,7 @@ export default async function Page() {
     centers,
     topups,
     centerUnpaid,
+    withdrawals,
     centerStats,
   ] = results.map((r) => r.data ?? []);
   return (
@@ -110,6 +113,7 @@ export default async function Page() {
           topups,
           centerUnpaid,
           centerStats,
+          withdrawals,
           bonuses,
           audits,
           centers,

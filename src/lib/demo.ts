@@ -64,6 +64,7 @@ export function seedDemo(): AppData {
       created_at: m.created_at,
     })),
     bonuses: [],
+    withdrawals: [],
     audits: [],
     centers: [{ id: "center-demo", name: "서울 센터", owner_id: "demo-0" }],
   };

@@ -3,7 +3,7 @@ import { configured, createClient } from "@/lib/supabase/server";
 import MemberApp, { type MemberSection } from "@/components/member-app";
 import { memberSnapshot } from "@/lib/member-data";
 import { seedDemo } from "@/lib/demo";
-import type { Member, Purchase, Bonus } from "@/lib/domain";
+import type { Member, Purchase, Bonus, Withdrawal } from "@/lib/domain";
 export const dynamic = "force-dynamic";
 export default async function Page({
   params,
@@ -65,7 +65,7 @@ export default async function Page({
       </main>
     );
   // Explicit ownership filters remain in place even if the signed-in user has admin privileges.
-  async function ownRows(table: "purchases" | "bonuses") {
+  async function ownRows(table: "purchases" | "bonuses" | "withdrawals") {
     const rows: Record<string, unknown>[] = [];
     for (let offset = 0; ; offset += 500) {
       let query = client.from(table).select("*").eq("member_id", user!.id);
@@ -96,6 +96,7 @@ export default async function Page({
   const [
     purchases,
     bonuses,
+    withdrawals,
     gradeResult,
     centerResult,
     productsResult,
@@ -107,6 +108,7 @@ export default async function Page({
         ? ownRows("purchases")
         : Promise.resolve([]),
     section === "bonuses" ? ownRows("bonuses") : Promise.resolve([]),
+    ["bonuses", "profile"].includes(section) ? ownRows("withdrawals") : Promise.resolve([]),
     ["home", "profile"].includes(section)
       ? client.rpc("my_grade")
       : Promise.resolve({ data: null, error: null }),
@@ -146,6 +148,7 @@ export default async function Page({
           (p) => p.payment_method === "pv",
         ) as Purchase[],
         bonuses: bonuses as Bonus[],
+        withdrawals: withdrawals as Withdrawal[],
         centerName: centerResult.data?.name ?? null,
       }}
     />

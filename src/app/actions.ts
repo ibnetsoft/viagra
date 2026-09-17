@@ -17,6 +17,16 @@ const memberFields = z.object({
   address: z.string().trim().max(200).default(""),
   address_detail: z.string().trim().max(200).default(""),
 });
+const profileFields = z.object({
+  email: z.email(),
+  phone: z.string().regex(/^[0-9+\- ]{9,20}$/),
+  password: z.union([z.string().min(8).max(128), z.literal("")]).default(""),
+});
+const addressFields = z.object({
+  postcode: z.string().trim().regex(/^(?:\d{5})?$/).default(""),
+  address: z.string().trim().max(200).default(""),
+  address_detail: z.string().trim().max(200).default(""),
+});
 export async function signupCenters(): Promise<{ centers: { id: string; name: string }[]; error?: string }> {
   if (!configured()) return { centers: [] };
   try {
@@ -209,6 +219,7 @@ export async function mutate(
           sponsor_id: uuid.nullable(),
           position: z.enum(["L", "R"]).nullable(),
           center_id: uuid.nullable(),
+          password: z.union([z.string().min(8).max(128), z.literal("")]).optional(),
         })
         .parse(payload);
       rpc = "update_member_with_bank";
@@ -250,6 +261,10 @@ export async function mutate(
       const p = z.object({ id: uuid }).parse(payload);
       rpc = "delete_center";
       args = { p_id: p.id };
+    } else if (action === "withdrawal") {
+      const p = z.object({ id: uuid, status: z.enum(["approved", "rejected"]), note: z.string().max(500).default("") }).parse(payload);
+      rpc = "process_withdrawal";
+      args = { p_id: p.id, p_status: p.status, p_note: p.note };
     } else if (action === "close") {
       const p = z
         .object({ day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) })
@@ -265,6 +280,14 @@ export async function mutate(
             ? "이미 사용 중인 후원 자리 또는 이름입니다."
             : error.message,
       };
+    if (action === "member") {
+      const nextPassword = typeof payload.password === "string" ? payload.password.trim() : "";
+      if (nextPassword) {
+        const id = String(payload.id ?? "");
+        const { error: passwordError } = await loginDirectory().auth.admin.updateUserById(id, { password: nextPassword });
+        if (passwordError) return { error: "회원 정보는 저장됐지만 비밀번호 변경에 실패했습니다." };
+      }
+    }
     revalidatePath("/admin");
     revalidatePath("/app", "layout");
     return {};
@@ -349,6 +372,56 @@ export async function loadOrganizationTree(
     p_depth: depth,
   });
   return error ? { error: error.message } : { data };
+}
+
+export async function saveMyProfile(form: FormData): Promise<{ error?: string }> {
+  const parsed = profileFields.safeParse({
+    email: String(form.get("email") ?? "").trim(),
+    phone: String(form.get("phone") ?? ""),
+    password: String(form.get("password") ?? ""),
+  });
+  if (!parsed.success) return { error: "이메일, 전화번호, 비밀번호를 확인하세요." };
+  const client = await createClient();
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) return { error: "로그인이 필요합니다." };
+  if (parsed.data.password) {
+    const { error } = await client.auth.updateUser({ password: parsed.data.password });
+    if (error) return { error: "비밀번호를 변경하지 못했습니다." };
+  }
+  const { error } = await client.rpc("update_my_profile", { p_email: parsed.data.email, p_phone: parsed.data.phone });
+  if (error) return { error: error.message };
+  revalidatePath("/app", "layout");
+  revalidatePath("/admin");
+  return {};
+}
+
+export async function saveMyAddress(form: FormData): Promise<{ error?: string }> {
+  const parsed = addressFields.safeParse(Object.fromEntries(form));
+  if (!parsed.success) return { error: "배송지 정보를 확인하세요." };
+  const client = await createClient();
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) return { error: "로그인이 필요합니다." };
+  const { error } = await client.rpc("update_my_address", { p_postcode: parsed.data.postcode, p_address: parsed.data.address, p_detail: parsed.data.address_detail });
+  if (error) return { error: error.message };
+  revalidatePath("/app", "layout");
+  revalidatePath("/admin");
+  return {};
+}
+
+export async function requestMyWithdrawal(form: FormData): Promise<{ error?: string }> {
+  const parsed = z.object({ amount: z.coerce.number().int().positive(), note: z.string().trim().max(500).default("") }).safeParse({
+    amount: form.get("amount"),
+    note: String(form.get("note") ?? ""),
+  });
+  if (!parsed.success) return { error: "출금 금액을 확인하세요." };
+  const client = await createClient();
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) return { error: "로그인이 필요합니다." };
+  const { error } = await client.rpc("request_withdrawal", { p_amount: parsed.data.amount, p_note: parsed.data.note });
+  if (error) return { error: error.message };
+  revalidatePath("/app", "layout");
+  revalidatePath("/admin");
+  return {};
 }
 
 export async function saveMyBank(form: FormData): Promise<{ error?: string }> {

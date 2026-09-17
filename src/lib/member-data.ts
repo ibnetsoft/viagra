@@ -1,4 +1,4 @@
-import type { AppData, Member, Purchase, Bonus, Product } from "./domain";
+import type { AppData, Member, Purchase, Bonus, Product, Withdrawal } from "./domain";
 export type MemberData = {
   totalPaid?: number;
   products?: Product[];
@@ -6,6 +6,7 @@ export type MemberData = {
   member: Member;
   purchases: Purchase[];
   bonuses: Bonus[];
+  withdrawals: Withdrawal[];
   centerName: string | null;
 };
 export function memberSnapshot(data: AppData, id: string): MemberData {
@@ -16,6 +17,7 @@ export function memberSnapshot(data: AppData, id: string): MemberData {
     products: demoProducts,
     purchases: data.purchases.filter((p) => p.member_id === id),
     bonuses: data.bonuses.filter((b) => b.member_id === id),
+    withdrawals: (data.withdrawals ?? []).filter((w) => w.member_id === id),
     centerName:
       data.centers.find((c) => c.id === member.center_id)?.name ?? null,
   };

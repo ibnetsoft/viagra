@@ -61,6 +61,20 @@ export type Bonus = {
   reason: string;
   created_at: string;
 };
+export type Withdrawal = {
+  id: string;
+  member_id: string;
+  amount: number;
+  bank_name: string;
+  account_number: string;
+  account_holder: string;
+  status: "pending" | "approved" | "rejected";
+  note: string;
+  admin_note: string;
+  processed_by: string | null;
+  processed_at: string | null;
+  created_at: string;
+};
 export type Audit = {
   id: string;
   action: string;
@@ -79,6 +93,7 @@ export type Topup = {
   created_at: string;
 };
 export type AppData = {
+  withdrawals?: Withdrawal[];
   centerStats?: { center_id: string; sales_pv: number; today_pv: number }[];
   centerSales?: {
     purchase_id: string;
