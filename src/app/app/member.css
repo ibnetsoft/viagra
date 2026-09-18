@@ -679,6 +679,11 @@
   margin: 18px 0;
   font-size: 11px;
 }
+.member-org-path-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
 .member-org-path button {
   display: flex;
   align-items: center;
@@ -692,6 +697,94 @@
 }
 .member-org-path button:disabled {
   opacity: 0.4;
+}
+.member-org-fullscreen {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  z-index: 9999 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+  background: var(--m-bg, #f4f6f3) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: none !important;
+}
+.member-org-fullscreen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--m-surface, #ffffff);
+  border-bottom: 1px solid var(--m-border, #dfe5d8);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  flex-shrink: 0;
+  z-index: 10;
+}
+.member-org-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--m-border, #bfd1bd);
+  background: var(--m-soft, #edf3e7);
+  border-radius: 8px;
+  padding: 7px 11px;
+  color: var(--m-accent, #205e4e);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.member-org-fullscreen-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+.member-org-fullscreen-depth {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--m-muted, #74836a);
+}
+.member-org-fullscreen-depth select {
+  padding: 6px 8px;
+  border: 1px solid var(--m-border, #dce4d7);
+  border-radius: 8px;
+  background: var(--m-surface, #fff);
+  color: var(--m-text, #203c31);
+  font: inherit;
+  font-size: 11px;
+}
+.member-org-fs-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--m-border, #dfe5d8);
+  background: var(--m-surface, #fff);
+  border-radius: 8px;
+  padding: 6px 8px;
+  color: var(--m-accent, #205e4e);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.member-org-fullscreen .member-org-viewport {
+  flex: 1;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  padding: 24px 14px 40px;
+  background: radial-gradient(var(--m-soft, #e2ece0) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 .member-org-root {
   border: 1px solid var(--m-border, #bfd1bd);

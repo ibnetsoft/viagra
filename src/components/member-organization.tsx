@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { Network, RotateCcw } from "lucide-react";
+import { ArrowLeft, Maximize2, Network, RotateCcw } from "lucide-react";
 import {
   loadOrganizationTree,
   loadUnplacedMembers,
@@ -34,6 +34,7 @@ export default function MemberOrganization({
   const [path, setPath] = useState<OrganizationNode[]>([]);
   const [depthLimit, setDepthLimit] = useState(3);
   const [zoom, setZoom] = useState(1);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [data, setData] = useState<OrganizationData | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -252,6 +253,25 @@ export default function MemberOrganization({
     };
   }, [data, loading, data?.root.id, mode, depthLimit, root]);
 
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsFullscreen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isFullscreen]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => centerOnRoot(), 50);
+    return () => clearTimeout(timer);
+  }, [isFullscreen]);
+
   function beginPan(event: React.PointerEvent<HTMLDivElement>) {
     const viewport = viewportRef.current;
     if (!viewport || pinch.current) return;
@@ -371,18 +391,30 @@ export default function MemberOrganization({
       )}
       {notice && <p role="status">{notice}</p>}
       <div className="member-org-path">
-        <button
-          onClick={() => {
-            setPath([]);
-            setZoom(1);
-            requestAnimationFrame(() => centerOnRoot());
-          }}
-        >
-          <RotateCcw size={14} />
-          나부터 보기
-        </button>
+        <div className="member-org-path-actions">
+          <button
+            type="button"
+            onClick={() => {
+              setPath([]);
+              setZoom(1);
+              requestAnimationFrame(() => centerOnRoot());
+            }}
+          >
+            <RotateCcw size={14} />
+            나부터 보기
+          </button>
+          <button
+            type="button"
+            className="member-org-fullscreen-btn"
+            onClick={() => setIsFullscreen(true)}
+            title="조직도 전체화면으로 보기"
+          >
+            <Maximize2 size={14} />
+            전체화면
+          </button>
+        </div>
         {path.length > 0 && (
-          <button onClick={() => setPath(path.slice(0, -1))}>이전 단계</button>
+          <button type="button" onClick={() => setPath(path.slice(0, -1))}>이전 단계</button>
         )}
       </div>
       {error && <p role="alert">{error}</p>}
@@ -393,9 +425,65 @@ export default function MemberOrganization({
       ) : (
         data && (
           <section
-            className="member-card member-org"
+            className={`member-card member-org ${isFullscreen ? "member-org-fullscreen" : ""}`}
             aria-label={mode === "sponsor" ? "후원 배치" : "추천 관계"}
           >
+            {isFullscreen && (
+              <div className="member-org-fullscreen-header">
+                <button
+                  type="button"
+                  className="member-org-back-btn"
+                  onClick={() => setIsFullscreen(false)}
+                >
+                  <ArrowLeft size={18} />
+                  <span>원래 화면으로 복귀</span>
+                </button>
+                <div className="member-org-fullscreen-controls">
+                  <label className="member-org-fullscreen-depth">
+                    <span>단계</span>
+                    <select
+                      value={depthLimit}
+                      onChange={(e) => setDepthLimit(Number(e.target.value))}
+                    >
+                      {depthOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    className="member-org-fs-action-btn"
+                    onClick={() => {
+                      setPath([]);
+                      setZoom(1);
+                      requestAnimationFrame(() => centerOnRoot());
+                    }}
+                  >
+                    <RotateCcw size={13} />
+                    나부터 보기
+                  </button>
+                  <div className="member-zoom-controls" aria-label="조직도 확대 축소">
+                    <button type="button" onClick={() => setZoomStep(-0.1)}>
+                      -
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setZoom(1);
+                        requestAnimationFrame(() => centerOnRoot());
+                      }}
+                    >
+                      {Math.round(zoom * 100)}%
+                    </button>
+                    <button type="button" onClick={() => setZoomStep(0.1)}>
+                      +
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             <div
               ref={viewportRef}
               className={`member-org-viewport ${panning ? "is-panning" : ""}`}
