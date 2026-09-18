@@ -1099,17 +1099,15 @@
 .member-org-viewport::-webkit-scrollbar {
   display: none;
 }
-.member-org-viewport.is-panning {
-  cursor: grabbing;
-}
-.member-org-viewport.is-panning .member-org-scale {
+.member-org-viewport.is-panning .member-org-scale,
+.member-org-viewport.is-pinching .member-org-scale {
   pointer-events: none;
   transition: none;
 }
 .member-org-scale {
   width: max-content;
   min-width: 100%;
-  transform-origin: top center;
+  transform-origin: 0 0;
   transition: transform .15s ease;
   will-change: transform;
 }

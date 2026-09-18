@@ -55,7 +55,14 @@ export default function MemberOrganization({
   const dialog = useRef<HTMLDialogElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const scaleRef = useRef<HTMLDivElement>(null);
-  const pinch = useRef<{ distance: number; zoom: number } | null>(null);
+  const pinch = useRef<{
+    distance: number;
+    zoom: number;
+    panX: number;
+    panY: number;
+    focalX: number;
+    focalY: number;
+  } | null>(null);
   const drag = useRef<{
     pointerId: number;
     x: number;
@@ -66,6 +73,7 @@ export default function MemberOrganization({
   } | null>(null);
   const suppressClick = useRef(false);
   const [panning, setPanning] = useState(false);
+  const [pinching, setPinching] = useState(false);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const root = path.at(-1)?.id ?? memberId;
 
@@ -486,7 +494,7 @@ export default function MemberOrganization({
             )}
             <div
               ref={viewportRef}
-              className={`member-org-viewport ${panning ? "is-panning" : ""}`}
+              className={`member-org-viewport ${panning ? "is-panning" : ""} ${pinching ? "is-pinching" : ""}`}
               onPointerDown={beginPan}
               onPointerMove={movePan}
               onPointerUp={endPan}
@@ -502,20 +510,41 @@ export default function MemberOrganization({
                 drag.current = null;
                 setPanning(false);
                 const [a, b] = Array.from(event.touches);
+                const distance = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+                const vpRect = viewportRef.current?.getBoundingClientRect();
+                const focalX = (a.clientX + b.clientX) / 2 - (vpRect?.left ?? 0);
+                const focalY = (a.clientY + b.clientY) / 2 - (vpRect?.top ?? 0);
                 pinch.current = {
-                  distance: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY),
+                  distance,
                   zoom,
+                  panX: pan.x,
+                  panY: pan.y,
+                  focalX,
+                  focalY,
                 };
+                setPinching(true);
               }}
               onTouchMove={(event) => {
-                if (event.touches.length !== 2 || !pinch.current) return;
+                const current = pinch.current;
+                if (event.touches.length !== 2 || !current) return;
                 event.preventDefault();
                 const [a, b] = Array.from(event.touches);
                 const distance = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
-                setZoom(clampZoom(pinch.current.zoom * (distance / pinch.current.distance)));
+                const vpRect = viewportRef.current?.getBoundingClientRect();
+                const currentFocalX = (a.clientX + b.clientX) / 2 - (vpRect?.left ?? 0);
+                const currentFocalY = (a.clientY + b.clientY) / 2 - (vpRect?.top ?? 0);
+                const nextZoom = clampZoom(current.zoom * (distance / current.distance));
+                const zoomRatio = nextZoom / current.zoom;
+                const nextPanX = currentFocalX - (current.focalX - current.panX) * zoomRatio;
+                const nextPanY = currentFocalY - (current.focalY - current.panY) * zoomRatio;
+                setZoom(nextZoom);
+                setPan({ x: Math.round(nextPanX), y: Math.round(nextPanY) });
               }}
               onTouchEnd={(event) => {
-                if (event.touches.length < 2) pinch.current = null;
+                if (event.touches.length < 2) {
+                  pinch.current = null;
+                  setPinching(false);
+                }
               }}
             >
               <div
