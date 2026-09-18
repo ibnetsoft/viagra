@@ -992,10 +992,13 @@ td small {
 }
 .tree-canvas {
   padding: 45px 30px;
-  overflow: auto;
+  overflow: hidden;
   background: radial-gradient(var(--admin-surface-dce5e0, #dce5e0) 1px, transparent 1px);
   background-size: 20px 20px;
   min-height: 480px;
+  cursor: default;
+  user-select: none;
+  overscroll-behavior: contain;
 }
 .tree-branch {
   display: flex;
@@ -1895,11 +1898,21 @@ fieldset:disabled {
 .tree-canvas {
   transform-origin: top center;
 }
+.tree-canvas.space-pan-ready {
+  cursor: grab;
+}
+.tree-canvas.is-panning {
+  cursor: grabbing;
+}
+.tree-canvas.is-panning .tree-scale {
+  pointer-events: none;
+}
 .tree-scale {
   width: max-content;
   min-width: 100%;
   transform-origin: top center;
   transition: transform .15s ease;
+  will-change: transform;
 }
 
 .org-root-picker {

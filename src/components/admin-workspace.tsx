@@ -137,7 +137,18 @@ export default function AdminWorkspace({
     [orgZoom, setOrgZoom] = useState(1),
     [page, setPage] = useState(1);
   const requestId = useRef("");
+  const orgCanvasRef = useRef<HTMLDivElement>(null);
+  const orgPanDrag = useRef<{
+    pointerId: number;
+    x: number;
+    y: number;
+    panX: number;
+    panY: number;
+  } | null>(null);
   const [serviceMemberId, setServiceMemberId] = useState<string | null>(null);
+  const [orgSpacePressed, setOrgSpacePressed] = useState(false);
+  const [orgPanning, setOrgPanning] = useState(false);
+  const [orgPan, setOrgPan] = useState({ x: 0, y: 0 });
   useEffect(() => {
     if (initialData) setData(initialData);
   }, [initialData]);
@@ -165,6 +176,34 @@ export default function AdminWorkspace({
       return () => clearTimeout(timer);
     }
   }, [toast]);
+  useEffect(() => {
+    if (tab !== "organization") return;
+    const isTypingTarget = (target: EventTarget | null) => {
+      const element = target as HTMLElement | null;
+      if (!element) return false;
+      return Boolean(
+        element.closest("input, textarea, select, button") ||
+          element.isContentEditable,
+      );
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.code !== "Space" || isTypingTarget(event.target)) return;
+      event.preventDefault();
+      setOrgSpacePressed(true);
+    };
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (event.code !== "Space") return;
+      setOrgSpacePressed(false);
+      setOrgPanning(false);
+      orgPanDrag.current = null;
+    };
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+    };
+  }, [tab]);
   const businessMembers = data.members
     .filter((m) => m.role === "member")
     .sort(
@@ -215,6 +254,43 @@ export default function AdminWorkspace({
     setOrgZoom((value) =>
       Math.min(1.8, Math.max(0.45, Number((value + delta).toFixed(2)))),
     );
+  const beginOrgPan = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!orgSpacePressed || event.button !== 0) return;
+    event.preventDefault();
+    orgPanDrag.current = {
+      pointerId: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      panX: orgPan.x,
+      panY: orgPan.y,
+    };
+    orgCanvasRef.current?.setPointerCapture?.(event.pointerId);
+    setOrgPanning(true);
+  };
+  const moveOrgPan = (event: React.PointerEvent<HTMLDivElement>) => {
+    const current = orgPanDrag.current;
+    if (!current || current.pointerId !== event.pointerId) return;
+    event.preventDefault();
+    setOrgPan({
+      x: current.panX + event.clientX - current.x,
+      y: current.panY + event.clientY - current.y,
+    });
+  };
+  const endOrgPan = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (orgPanDrag.current?.pointerId === event.pointerId) {
+      orgCanvasRef.current?.releasePointerCapture?.(event.pointerId);
+      orgPanDrag.current = null;
+    }
+    setOrgPanning(false);
+  };
+  const zoomOrgWithWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    if (!event.ctrlKey) return;
+    event.preventDefault();
+    setOrgZoom((value) => {
+      const delta = event.deltaY > 0 ? -0.08 : 0.08;
+      return Math.min(1.8, Math.max(0.45, Number((value + delta).toFixed(2))));
+    });
+  };
   const persist = (next: AppData) => {
     if (demo) localStorage.setItem(demoStorage, JSON.stringify(next));
     setData(next);
@@ -1050,11 +1126,22 @@ export default function AdminWorkspace({
                   </div>
                 </div>
               </div>
-              <div className="tree-canvas">
+              <div
+                ref={orgCanvasRef}
+                className={`tree-canvas ${orgSpacePressed ? "space-pan-ready" : ""} ${orgPanning ? "is-panning" : ""}`}
+                onPointerDown={beginOrgPan}
+                onPointerMove={moveOrgPan}
+                onPointerUp={endOrgPan}
+                onPointerCancel={endOrgPan}
+                onWheel={zoomOrgWithWheel}
+              >
                 {!networkRoot && (
                   <p className="empty">등록된 회원이 없습니다.</p>
                 )}
-                <div className="tree-scale" style={{ transform: `scale(${orgZoom})` }}>
+                <div
+                  className="tree-scale"
+                  style={{ transform: `translate(${orgPan.x}px, ${orgPan.y}px) scale(${orgZoom})` }}
+                >
                   <TreeNode
                     id={networkRoot}
                     members={businessMembers}
@@ -1069,7 +1156,7 @@ export default function AdminWorkspace({
                 {orgMode === "sponsor"
                   ? "좌·우 배치는 추천인과 별도로 관리됩니다."
                   : "추천 관계를 기준으로 표시합니다. 후원 배치와 다를 수 있습니다."}{" "}
-                · 표시 단계를 바꾸거나 확대·축소해서 하위 조직을 확인하세요.
+                · 스페이스바를 누른 상태로 드래그하면 이동하고, Ctrl+휠로 확대·축소할 수 있습니다.
               </div>
             </section>
           )}
