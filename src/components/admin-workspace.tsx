@@ -93,6 +93,8 @@ const titles: Record<Tab, [string, string]> = {
   settings: ["운영 설정", "보상 기준, 일일 정산과 작업 기록을 관리하세요."],
 };
 const demoStorage = "vital-partners-demo-v2";
+const MEMBER_PAGE_SIZE = 50;
+const DEFAULT_PAGE_SIZE = 10;
 const orgDepthOptions = [
   { label: "전체", value: 0 },
   { label: "3단계", value: 3 },
@@ -757,7 +759,7 @@ export default function AdminWorkspace({
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.slice((page - 1) * 10, page * 10).map((m) => (
+                    {filtered.slice((page - 1) * MEMBER_PAGE_SIZE, page * MEMBER_PAGE_SIZE).map((m) => (
                       <tr key={m.id}>
                         <td className="member-sequence">
                           {memberNumbers.get(m.id)}
@@ -808,6 +810,7 @@ export default function AdminWorkspace({
                 total={filtered.length}
                 page={page}
                 setPage={setPage}
+                pageSize={MEMBER_PAGE_SIZE}
               />
             </section>
           )}
@@ -1972,10 +1975,12 @@ function Pagination({
   total,
   page,
   setPage,
+  pageSize = DEFAULT_PAGE_SIZE,
 }: {
   total: number;
   page: number;
   setPage: (n: number) => void;
+  pageSize?: number;
 }) {
   return (
     <div className="pagination">
@@ -1985,9 +1990,9 @@ function Pagination({
           이전
         </button>
         <span>
-          {page} / {Math.max(1, Math.ceil(total / 10))}
+          {page} / {Math.max(1, Math.ceil(total / pageSize))}
         </span>
-        <button disabled={page * 10 >= total} onClick={() => setPage(page + 1)}>
+        <button disabled={page * pageSize >= total} onClick={() => setPage(page + 1)}>
           다음
         </button>
       </div>
@@ -2064,7 +2069,7 @@ function TreeNode({
       <div className={`tree-node ${depth === 0 ? "root-node" : ""}`}>
         <strong>{m.name}</strong>
         <small className="tree-meta">
-          <span>{m.phone || "전화번호 미입력"}</span>
+          <span>ID {m.username ?? m.member_code.toLowerCase()}</span>
           <span>가입일 {fullDate(m.created_at)}</span>
           <span>매출PV {money(salesPv.get(m.id) ?? 0)} PV</span>
         </small>

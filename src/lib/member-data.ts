@@ -37,6 +37,7 @@ export type OrganizationNode = {
   id: string;
   name: string;
   member_code: string;
+  username?: string;
   phone?: string;
   created_at?: string;
   sales_pv?: number;
@@ -87,6 +88,7 @@ export function demoOrganization(
       id: m.id,
       name: m.name,
       member_code: m.member_code,
+      username: m.username,
       phone: m.phone,
       created_at: m.created_at,
       sales_pv: data.purchases

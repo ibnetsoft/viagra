@@ -384,7 +384,7 @@ export default function MemberOrganization({
   function NodeDetails({ node }: { node: OrganizationNode }) {
     return (
       <small className="member-org-meta">
-        <span>{node.phone || "전화번호 미입력"}</span>
+        <span>ID {node.username ?? node.member_code.toLowerCase()}</span>
         <span>가입일 {node.created_at ? fullDate(node.created_at) : "-"}</span>
         <span>매출PV {money(Number(node.sales_pv ?? 0))} PV</span>
       </small>
