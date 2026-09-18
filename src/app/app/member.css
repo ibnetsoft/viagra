@@ -1011,6 +1011,7 @@
 }
 .member-org-viewport.is-panning .member-org-scale {
   pointer-events: none;
+  transition: none;
 }
 .member-org-scale {
   width: max-content;

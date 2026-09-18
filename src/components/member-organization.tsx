@@ -53,6 +53,7 @@ export default function MemberOrganization({
   const [notice, setNotice] = useState("");
   const dialog = useRef<HTMLDialogElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
+  const scaleRef = useRef<HTMLDivElement>(null);
   const pinch = useRef<{ distance: number; zoom: number } | null>(null);
   const drag = useRef<{
     pointerId: number;
@@ -66,6 +67,26 @@ export default function MemberOrganization({
   const [panning, setPanning] = useState(false);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const root = path.at(-1)?.id ?? memberId;
+
+  const centerOnRoot = () => {
+    const viewport = viewportRef.current;
+    const scale = scaleRef.current;
+    if (!viewport || !scale) return;
+    const rootEl = scale.querySelector<HTMLElement>(".member-org-root");
+    if (!rootEl) return;
+
+    const vpRect = viewport.getBoundingClientRect();
+    const rootRect = rootEl.getBoundingClientRect();
+    if (!vpRect.width || !rootRect.width) return;
+
+    const diffX = vpRect.left + vpRect.width / 2 - (rootRect.left + rootRect.width / 2);
+    const diffY = vpRect.top + 24 - rootRect.top;
+
+    setPan((prev) => ({
+      x: Math.round(prev.x + diffX),
+      y: Math.round(prev.y + diffY),
+    }));
+  };
   const fullDate = (s: string) =>
     new Intl.DateTimeFormat("ko-KR", {
       year: "2-digit",
@@ -210,9 +231,26 @@ export default function MemberOrganization({
 
 
   useEffect(() => {
-    if (!data) return;
-    setPan({ x: 0, y: 0 });
-  }, [data?.root.id, mode, depthLimit]);
+    if (!data || loading) return;
+    let frameId: number;
+    let timerId: ReturnType<typeof setTimeout>;
+
+    const align = () => {
+      centerOnRoot();
+    };
+
+    frameId = requestAnimationFrame(() => {
+      align();
+      timerId = setTimeout(align, 60);
+    });
+
+    window.addEventListener("resize", align);
+    return () => {
+      cancelAnimationFrame(frameId);
+      clearTimeout(timerId);
+      window.removeEventListener("resize", align);
+    };
+  }, [data, loading, data?.root.id, mode, depthLimit, root]);
 
   function beginPan(event: React.PointerEvent<HTMLDivElement>) {
     const viewport = viewportRef.current;
@@ -292,7 +330,13 @@ export default function MemberOrganization({
           <button type="button" onClick={() => setZoomStep(-0.1)}>
             축소
           </button>
-          <button type="button" onClick={() => setZoom(1)}>
+          <button
+            type="button"
+            onClick={() => {
+              setZoom(1);
+              requestAnimationFrame(() => centerOnRoot());
+            }}
+          >
             {Math.round(zoom * 100)}%
           </button>
           <button type="button" onClick={() => setZoomStep(0.1)}>
@@ -330,6 +374,8 @@ export default function MemberOrganization({
         <button
           onClick={() => {
             setPath([]);
+            setZoom(1);
+            requestAnimationFrame(() => centerOnRoot());
           }}
         >
           <RotateCcw size={14} />
@@ -385,6 +431,7 @@ export default function MemberOrganization({
               }}
             >
               <div
+                ref={scaleRef}
                 className="member-org-scale"
                 style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}
               >
