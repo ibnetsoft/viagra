@@ -58,12 +58,13 @@ export default function MemberOrganization({
     pointerId: number;
     x: number;
     y: number;
-    scrollLeft: number;
-    scrollTop: number;
+    panX: number;
+    panY: number;
     moved: boolean;
   } | null>(null);
   const suppressClick = useRef(false);
   const [panning, setPanning] = useState(false);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
   const root = path.at(-1)?.id ?? memberId;
   const fullDate = (s: string) =>
     new Intl.DateTimeFormat("ko-KR", {
@@ -210,12 +211,7 @@ export default function MemberOrganization({
 
   useEffect(() => {
     if (!data) return;
-    const viewport = viewportRef.current;
-    if (!viewport) return;
-    requestAnimationFrame(() => {
-      viewport.scrollLeft = Math.max(0, (viewport.scrollWidth - viewport.clientWidth) / 2);
-      viewport.scrollTop = 0;
-    });
+    setPan({ x: 0, y: 0 });
   }, [data?.root.id, mode, depthLimit]);
 
   function beginPan(event: React.PointerEvent<HTMLDivElement>) {
@@ -225,8 +221,8 @@ export default function MemberOrganization({
       pointerId: event.pointerId,
       x: event.clientX,
       y: event.clientY,
-      scrollLeft: viewport.scrollLeft,
-      scrollTop: viewport.scrollTop,
+      panX: pan.x,
+      panY: pan.y,
       moved: false,
     };
     viewport.setPointerCapture?.(event.pointerId);
@@ -243,8 +239,7 @@ export default function MemberOrganization({
       current.moved = true;
       suppressClick.current = true;
     }
-    viewport.scrollLeft = current.scrollLeft - dx;
-    viewport.scrollTop = current.scrollTop - dy;
+    setPan({ x: current.panX + dx, y: current.panY + dy });
     if (current.moved) event.preventDefault();
   }
 
@@ -391,7 +386,7 @@ export default function MemberOrganization({
             >
               <div
                 className="member-org-scale"
-                style={{ transform: `scale(${zoom})` }}
+                style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}
               >
                 {renderNode(data.root, true)}
               </div>

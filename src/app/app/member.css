@@ -991,12 +991,17 @@
   font-size: 11px;
 }
 .member-org-viewport {
-  overflow: auto;
+  height: 60dvh;
+  min-height: 360px;
+  max-height: 620px;
+  overflow: hidden;
   padding: 24px 10px 34px;
   touch-action: none;
+  overscroll-behavior: contain;
   cursor: grab;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  user-select: none;
 }
 .member-org-viewport::-webkit-scrollbar {
   display: none;
@@ -1012,6 +1017,7 @@
   min-width: 100%;
   transform-origin: top center;
   transition: transform .15s ease;
+  will-change: transform;
 }
 .member-org-tree-node {
   display: flex;
