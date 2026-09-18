@@ -52,7 +52,18 @@ export default function MemberOrganization({
   const [revision, setRevision] = useState(0);
   const [notice, setNotice] = useState("");
   const dialog = useRef<HTMLDialogElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
   const pinch = useRef<{ distance: number; zoom: number } | null>(null);
+  const drag = useRef<{
+    pointerId: number;
+    x: number;
+    y: number;
+    scrollLeft: number;
+    scrollTop: number;
+    moved: boolean;
+  } | null>(null);
+  const suppressClick = useRef(false);
+  const [panning, setPanning] = useState(false);
   const root = path.at(-1)?.id ?? memberId;
   const fullDate = (s: string) =>
     new Intl.DateTimeFormat("ko-KR", {
@@ -196,6 +207,56 @@ export default function MemberOrganization({
     };
   }, [demo, memberId, mode, root, depthLimit, revision]);
 
+
+  useEffect(() => {
+    if (!data) return;
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    requestAnimationFrame(() => {
+      viewport.scrollLeft = Math.max(0, (viewport.scrollWidth - viewport.clientWidth) / 2);
+      viewport.scrollTop = 0;
+    });
+  }, [data?.root.id, mode, depthLimit]);
+
+  function beginPan(event: React.PointerEvent<HTMLDivElement>) {
+    const viewport = viewportRef.current;
+    if (!viewport || pinch.current) return;
+    drag.current = {
+      pointerId: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      scrollLeft: viewport.scrollLeft,
+      scrollTop: viewport.scrollTop,
+      moved: false,
+    };
+    viewport.setPointerCapture?.(event.pointerId);
+    setPanning(true);
+  }
+
+  function movePan(event: React.PointerEvent<HTMLDivElement>) {
+    const current = drag.current;
+    const viewport = viewportRef.current;
+    if (!current || !viewport || current.pointerId !== event.pointerId || pinch.current) return;
+    const dx = event.clientX - current.x;
+    const dy = event.clientY - current.y;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+      current.moved = true;
+      suppressClick.current = true;
+    }
+    viewport.scrollLeft = current.scrollLeft - dx;
+    viewport.scrollTop = current.scrollTop - dy;
+    if (current.moved) event.preventDefault();
+  }
+
+  function endPan(event: React.PointerEvent<HTMLDivElement>) {
+    const viewport = viewportRef.current;
+    if (drag.current?.pointerId === event.pointerId) {
+      viewport?.releasePointerCapture?.(event.pointerId);
+      drag.current = null;
+    }
+    setPanning(false);
+  }
+
   return (
     <>
       <div className="member-page-title">
@@ -295,9 +356,22 @@ export default function MemberOrganization({
             aria-label={mode === "sponsor" ? "후원 배치" : "추천 관계"}
           >
             <div
-              className="member-org-viewport"
+              ref={viewportRef}
+              className={`member-org-viewport ${panning ? "is-panning" : ""}`}
+              onPointerDown={beginPan}
+              onPointerMove={movePan}
+              onPointerUp={endPan}
+              onPointerCancel={endPan}
+              onClickCapture={(event) => {
+                if (!suppressClick.current) return;
+                event.preventDefault();
+                event.stopPropagation();
+                suppressClick.current = false;
+              }}
               onTouchStart={(event) => {
                 if (event.touches.length !== 2) return;
+                drag.current = null;
+                setPanning(false);
                 const [a, b] = Array.from(event.touches);
                 pinch.current = {
                   distance: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY),
@@ -311,8 +385,8 @@ export default function MemberOrganization({
                 const distance = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
                 setZoom(clampZoom(pinch.current.zoom * (distance / pinch.current.distance)));
               }}
-              onTouchEnd={() => {
-                pinch.current = null;
+              onTouchEnd={(event) => {
+                if (event.touches.length < 2) pinch.current = null;
               }}
             >
               <div

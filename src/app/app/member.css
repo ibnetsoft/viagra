@@ -994,6 +994,18 @@
   overflow: auto;
   padding: 24px 10px 34px;
   touch-action: none;
+  cursor: grab;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.member-org-viewport::-webkit-scrollbar {
+  display: none;
+}
+.member-org-viewport.is-panning {
+  cursor: grabbing;
+}
+.member-org-viewport.is-panning .member-org-scale {
+  pointer-events: none;
 }
 .member-org-scale {
   width: max-content;
