@@ -442,24 +442,24 @@ export default function MemberOrganization({
                   type="button"
                   className="member-org-back-btn"
                   onClick={() => setIsFullscreen(false)}
+                  aria-label="원래 화면으로 복귀"
+                  title="원래 화면으로 복귀"
                 >
                   <ArrowLeft size={18} />
-                  <span>원래 화면으로 복귀</span>
                 </button>
                 <div className="member-org-fullscreen-controls">
-                  <label className="member-org-fullscreen-depth">
-                    <span>단계</span>
-                    <select
-                      value={depthLimit}
-                      onChange={(e) => setDepthLimit(Number(e.target.value))}
-                    >
-                      {depthOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <select
+                    className="member-org-fullscreen-select"
+                    aria-label="표시 단계"
+                    value={depthLimit}
+                    onChange={(e) => setDepthLimit(Number(e.target.value))}
+                  >
+                    {depthOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                   <button
                     type="button"
                     className="member-org-fs-action-btn"
@@ -468,27 +468,11 @@ export default function MemberOrganization({
                       setZoom(1);
                       requestAnimationFrame(() => centerOnRoot());
                     }}
+                    title="나부터 보기 (本)"
+                    aria-label="나부터 보기"
                   >
-                    <RotateCcw size={13} />
-                    나부터 보기
+                    本
                   </button>
-                  <div className="member-zoom-controls" aria-label="조직도 확대 축소">
-                    <button type="button" onClick={() => setZoomStep(-0.1)}>
-                      -
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setZoom(1);
-                        requestAnimationFrame(() => centerOnRoot());
-                      }}
-                    >
-                      {Math.round(zoom * 100)}%
-                    </button>
-                    <button type="button" onClick={() => setZoomStep(0.1)}>
-                      +
-                    </button>
-                  </div>
                 </div>
               </div>
             )}
