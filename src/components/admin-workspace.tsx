@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowDownLeft,
+  ArrowLeft,
   ArrowUpRight,
   Check,
   ChevronRight,
@@ -13,6 +14,8 @@ import {
   LayoutDashboard,
   Leaf,
   LogOut,
+  Maximize2,
+  Minimize2,
   Package,
   Plus,
   Search,
@@ -135,6 +138,7 @@ export default function AdminWorkspace({
   const [orgRoot, setOrgRoot] = useState(userId),
     [orgDepth, setOrgDepth] = useState(3),
     [orgZoom, setOrgZoom] = useState(1),
+    [orgFullscreen, setOrgFullscreen] = useState(false),
     [page, setPage] = useState(1);
   const requestId = useRef("");
   const orgPanelRef = useRef<HTMLElement>(null);
@@ -177,6 +181,19 @@ export default function AdminWorkspace({
       return () => clearTimeout(timer);
     }
   }, [toast]);
+  useEffect(() => {
+    if (!orgFullscreen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOrgFullscreen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [orgFullscreen]);
   useEffect(() => {
     if (tab !== "organization") return;
     const isTypingTarget = (target: EventTarget | null) => {
@@ -1066,21 +1083,37 @@ export default function AdminWorkspace({
             </section>
           )}
           {tab === "organization" && (
-            <section className="panel" ref={orgPanelRef}>
+            <section
+              className={`panel ${orgFullscreen ? "admin-org-fullscreen" : ""}`}
+              ref={orgPanelRef}
+            >
               <div className="table-toolbar">
-                <div className="segmented">
-                  <button
-                    className={orgMode === "sponsor" ? "selected" : ""}
-                    onClick={() => setOrgMode("sponsor")}
-                  >
-                    후원 배치도
-                  </button>
-                  <button
-                    className={orgMode === "referral" ? "selected" : ""}
-                    onClick={() => setOrgMode("referral")}
-                  >
-                    추천 관계도
-                  </button>
+                <div className="admin-org-toolbar-left">
+                  {orgFullscreen && (
+                    <button
+                      type="button"
+                      className="button compact admin-org-back-btn"
+                      onClick={() => setOrgFullscreen(false)}
+                      title="원래 화면으로 복귀 (Esc)"
+                    >
+                      <ArrowLeft size={16} />
+                      되돌아가기
+                    </button>
+                  )}
+                  <div className="segmented">
+                    <button
+                      className={orgMode === "sponsor" ? "selected" : ""}
+                      onClick={() => setOrgMode("sponsor")}
+                    >
+                      후원 배치도
+                    </button>
+                    <button
+                      className={orgMode === "referral" ? "selected" : ""}
+                      onClick={() => setOrgMode("referral")}
+                    >
+                      추천 관계도
+                    </button>
+                  </div>
                 </div>
                 <div className="org-toolbar-controls">
                   <select
@@ -1144,6 +1177,28 @@ export default function AdminWorkspace({
                       )}
                     </select>
                   </div>
+                  <button
+                    type="button"
+                    className="button compact admin-org-fullscreen-toggle"
+                    onClick={() => setOrgFullscreen((v) => !v)}
+                    title={
+                      orgFullscreen
+                        ? "원래 화면으로 복귀 (Esc)"
+                        : "조직도 전체화면으로 보기"
+                    }
+                  >
+                    {orgFullscreen ? (
+                      <>
+                        <Minimize2 size={15} />
+                        원래대로
+                      </>
+                    ) : (
+                      <>
+                        <Maximize2 size={15} />
+                        전체화면
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
               <div
