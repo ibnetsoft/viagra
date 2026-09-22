@@ -103,7 +103,7 @@ export default function MemberOrganization({
       day: "2-digit",
       timeZone: "Asia/Seoul",
     }).format(new Date(s));
-  const clampZoom = (value: number) => Math.min(1.8, Math.max(0.45, value));
+  const clampZoom = (value: number) => Math.min(2.5, Math.max(0.15, value));
   const setZoomStep = (delta: number) =>
     setZoom((value) => clampZoom(Number((value + delta).toFixed(2))));
 
@@ -279,6 +279,24 @@ export default function MemberOrganization({
     const timer = setTimeout(() => centerOnRoot(), 50);
     return () => clearTimeout(timer);
   }, [isFullscreen]);
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const delta = e.deltaY < 0 ? 0.08 : -0.08;
+      setZoom((current) => clampZoom(Number((current + delta).toFixed(2))));
+    };
+
+    viewport.addEventListener("wheel", handleWheel, { passive: false });
+    return () => {
+      viewport.removeEventListener("wheel", handleWheel);
+    };
+  }, [data, isFullscreen]);
 
   function beginPan(event: React.PointerEvent<HTMLDivElement>) {
     const viewport = viewportRef.current;

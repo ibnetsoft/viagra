@@ -137,6 +137,7 @@ export default function AdminWorkspace({
     [orgZoom, setOrgZoom] = useState(1),
     [page, setPage] = useState(1);
   const requestId = useRef("");
+  const orgPanelRef = useRef<HTMLElement>(null);
   const orgCanvasRef = useRef<HTMLDivElement>(null);
   const orgPanDrag = useRef<{
     pointerId: number;
@@ -204,6 +205,26 @@ export default function AdminWorkspace({
       window.removeEventListener("keyup", onKeyUp);
     };
   }, [tab]);
+  useEffect(() => {
+    if (tab !== "organization") return;
+    const target = orgPanelRef.current;
+    if (!target) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const delta = e.deltaY < 0 ? 0.08 : -0.08;
+      setOrgZoom((current) =>
+        Math.min(2.5, Math.max(0.15, Number((current + delta).toFixed(2)))),
+      );
+    };
+
+    target.addEventListener("wheel", handleWheel, { passive: false });
+    return () => {
+      target.removeEventListener("wheel", handleWheel);
+    };
+  }, [tab]);
   const businessMembers = data.members
     .filter((m) => m.role === "member")
     .sort(
@@ -252,7 +273,7 @@ export default function AdminWorkspace({
   };
   const setOrgZoomStep = (delta: number) =>
     setOrgZoom((value) =>
-      Math.min(1.8, Math.max(0.45, Number((value + delta).toFixed(2)))),
+      Math.min(2.5, Math.max(0.15, Number((value + delta).toFixed(2)))),
     );
   const beginOrgPan = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!orgSpacePressed || event.button !== 0) return;
@@ -282,14 +303,6 @@ export default function AdminWorkspace({
       orgPanDrag.current = null;
     }
     setOrgPanning(false);
-  };
-  const zoomOrgWithWheel = (event: React.WheelEvent<HTMLDivElement>) => {
-    if (!event.ctrlKey) return;
-    event.preventDefault();
-    setOrgZoom((value) => {
-      const delta = event.deltaY > 0 ? -0.08 : 0.08;
-      return Math.min(1.8, Math.max(0.45, Number((value + delta).toFixed(2))));
-    });
   };
   const persist = (next: AppData) => {
     if (demo) localStorage.setItem(demoStorage, JSON.stringify(next));
@@ -1053,7 +1066,7 @@ export default function AdminWorkspace({
             </section>
           )}
           {tab === "organization" && (
-            <section className="panel">
+            <section className="panel" ref={orgPanelRef}>
               <div className="table-toolbar">
                 <div className="segmented">
                   <button
@@ -1085,7 +1098,14 @@ export default function AdminWorkspace({
                     <button className="button compact" onClick={() => setOrgZoomStep(-0.1)}>
                       축소
                     </button>
-                    <button className="button compact" onClick={() => setOrgZoom(1)}>
+                    <button
+                      className="button compact"
+                      onClick={() => {
+                        setOrgZoom(1);
+                        setOrgPan({ x: 0, y: 0 });
+                      }}
+                      title="100%로 초기화"
+                    >
                       {Math.round(orgZoom * 100)}%
                     </button>
                     <button className="button compact" onClick={() => setOrgZoomStep(0.1)}>
@@ -1133,7 +1153,6 @@ export default function AdminWorkspace({
                 onPointerMove={moveOrgPan}
                 onPointerUp={endOrgPan}
                 onPointerCancel={endOrgPan}
-                onWheel={zoomOrgWithWheel}
               >
                 {!networkRoot && (
                   <p className="empty">등록된 회원이 없습니다.</p>
